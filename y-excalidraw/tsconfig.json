@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "incremental": true,
+       "target": "ES2020",
+        "module": "ES2020",
+        "moduleResolution": "Node",
+        "declaration": true,
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "rootDir": "./",
+        "outDir": "./build",
+        "composite": true
+    }
+}
