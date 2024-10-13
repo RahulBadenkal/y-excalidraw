@@ -229,8 +229,3 @@ export const applyOperations = (yArray: Y.Array<Y.Map<any>>, operations: Operati
     }
   }, this)
 }
-
-
-/*
-  
-*/

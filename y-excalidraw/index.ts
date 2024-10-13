@@ -13,7 +13,6 @@ export class ExcalidrawBinding {
   yArray: Y.Array<Y.Map<any>>
   api: ExcalidrawImperativeAPI
   
-  //  actually we only need id, version. rest all can be ignored
   subscriptions: (() => void)[] = [];
   collaborators: Map<string, Collaborator> = new Map();
   lastKnownSceneVersion: number = -1;
@@ -30,13 +29,12 @@ export class ExcalidrawBinding {
         const sceneVersion = getSceneVersion(elements)
 
         if (sceneVersion <= this.lastKnownSceneVersion) {
-          // This fires very often even when data is not changed. so keeping a fast procedure to check if anything changed or not
+          // This fires very often even when data is not changedk, so keeping a fast procedure to check if anything changed or not
           // The logic is taken from excliadraw repo
           // Even on move operations, the version property changes so this should work
           return
         }
 
-        
         const {operations, lastKnownElements} = getDeltaOperationsForYjs(this.lastKnownElements, elements)
         applyOperations(this.yArray, operations)
 
@@ -180,6 +178,7 @@ export class ExcalidrawAssetsBinding {
       [...yMap.keys()].map((key) => yMap.get(key) as BinaryFileData),
     );
   }
+  
   destroy() {
     for (const s of this.subscriptions) {
       s();
