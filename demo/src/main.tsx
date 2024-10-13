@@ -8,7 +8,7 @@ import { POSTHOG_HOST, POSTHOG_KEY } from './constants.ts'
 posthog.init(POSTHOG_KEY,
   {
       api_host: POSTHOG_HOST,
-      person_profiles: 'identified_only' // or 'always' to create profiles for anonymous users as well
+      person_profiles: 'always'
   }
 )
 
