@@ -32,6 +32,6 @@ export const yjsToExcalidraw = (yArray: Y.Array<Y.Map<any>>): ExcalidrawElement[
       const key2 = b.get("pos") as string;
       return key1 > key2 ? 1 : (key1 < key2 ? -1 : 0)
     })
-    .map((x) => (x.get("el") as ExcalidrawElement))
+    .map((x) => x.get("el"))
   return x
 }
