@@ -13,8 +13,6 @@ RUN npm install
 # Define build argument to inject during the build stage
 ARG VITE_SIGNALLING_SERVER
 
-RUN echo "VITE_SIGNALLING_SERVER is: $VITE_SIGNALLING_SERVER"
-
 # Build the application
 RUN VITE_SIGNALLING_SERVER=$VITE_SIGNALLING_SERVER npm run build --workspace=@y-excalidraw/demo
 
