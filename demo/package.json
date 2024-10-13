@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "server": "PORT=4444 node ../node_modules/y-webrtc/bin/server.js",
     "lint": "eslint .",
     "preview": "vite preview"
   }

@@ -38,16 +38,17 @@
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.12",
     "globals": "^15.9.0",
+    "posthog-js": "^1.167.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.7.0",
     "vite": "^5.4.8",
     "y-protocols": "^1.0.6",
-    "yjs": "^13.6.19"
+    "yjs": "^13.6.19",
+    "y-webrtc": "^10.3.0"
   },
   "dependencies": {
-    "fractional-indexing": "^3.2.0",
-    "y-webrtc": "^10.3.0"
+    "fractional-indexing": "^3.2.0"
   }
 }
