@@ -42,8 +42,14 @@ export const getDeltaOperationsForYjs = (lastKnownElements: LastKnownOrderedElem
   }
 
   for (let newElement of newElements) {
-    let { index: oldIndex, ...oldElement } = opsTracker.idMap[newElement.id] || {}
-    if (!oldElement.id) {
+    let oldIndex: number | null = null;
+    let oldElement: LastKnownOrderedElement | null = null
+    if (opsTracker.idMap[newElement.id]) {
+      const {index, ...rest} = opsTracker.idMap[newElement.id]
+      oldIndex = index
+      oldElement = rest
+    }
+    if (!oldElement) {
       // Always add at the end
       const op = {
         id: newElement.id, version: newElement.version, 
@@ -54,7 +60,7 @@ export const getDeltaOperationsForYjs = (lastKnownElements: LastKnownOrderedElem
       opsTracker.idMap[op.id] = op;
       appendOperations.push({ type: 'append', id: newElement.id, pos: op.pos, element: newElement })
     }
-    else if (oldElement.id && newElement.version !== oldElement.version) {
+    else if (oldElement && newElement.version !== oldElement.version) {
       const op = {
         id: newElement.id, version: newElement.version, pos: oldElement.pos, index: oldIndex
       }
