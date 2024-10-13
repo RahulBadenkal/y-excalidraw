@@ -17,7 +17,7 @@ ARG VITE_POSTHOG_KEY
 # Build the application
 RUN VITE_SIGNALLING_SERVER=$VITE_SIGNALLING_SERVER \
     VITE_POSTHOG_KEY=$VITE_POSTHOG_KEY \
-    npm run build --workspace=@y-excalidraw/demo
+    npm run demo:build
 
 # Stage 2: Serve the application using a lightweight web server
 FROM nginx:alpine
