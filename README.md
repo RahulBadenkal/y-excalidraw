@@ -1,6 +1,6 @@
 # y-excalidraw
 
-> Excalidraw whiteboard binding for Yjs - [Demo]()
+> Excalidraw whiteboard binding for Yjs - [Demo](https://y-excalidraw.rahulbadenkal.com/)
 
 This binding binds a Y.Array to a Exacalidraw whiteboard.
 
