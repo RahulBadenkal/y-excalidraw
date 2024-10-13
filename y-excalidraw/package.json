@@ -1,10 +1,12 @@
 {
-  "name": "@y-excalidraw/src",
+  "name": "@y-excalidraw/y-excalidraw",
   "version": "1.0.0",
   "description": "",
   "type": "module",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "build": "rm -rf dist && node esbuild.config.mjs && tsc --emitDeclarationOnly"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC"

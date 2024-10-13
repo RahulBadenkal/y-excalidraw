@@ -4,11 +4,12 @@ import { Excalidraw } from "@excalidraw/excalidraw";
 import * as Y from "yjs";
 
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types/types";
-import { ExcalidrawBinding, ExcalidrawAssetsBinding } from "@y-excalidraw/y-exacalidraw"
+import { ExcalidrawBinding, ExcalidrawAssetsBinding } from "@y-excalidraw/y-excalidraw"
 
 import { WebrtcProvider } from 'y-webrtc'
 
 import * as random from 'lib0/random'
+import { SIGNALLING_SERVER } from "./constants";
 
 export const usercolors = [
   { color: '#30bced', light: '#30bced33' },
@@ -24,7 +25,7 @@ export const usercolors = [
 export const userColor = usercolors[random.uint32() % usercolors.length]
 
 const ydoc = new Y.Doc()
-const provider = new WebrtcProvider('y-excalidraw-demo-room-2', ydoc)
+const provider = new WebrtcProvider('y-excalidraw-demo-room', ydoc, { signaling: [SIGNALLING_SERVER] })
 
 provider.awareness.setLocalStateField('user', {
   name: 'Anonymous ' + Math.floor(Math.random() * 100),

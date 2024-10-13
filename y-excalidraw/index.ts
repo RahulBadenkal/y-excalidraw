@@ -63,14 +63,14 @@ export class ExcalidrawBinding {
 
     if (this.awareness) {
       // Listener for changes made to selected elements by current user
-      this.subscriptions.push(() => 
+      this.subscriptions.push(
         api.onChange((_, state) => {
           this.awareness!.setLocalStateField(
             "selectedElementIds",
             state.selectedElementIds,
           );
         })
-      );
+      )
       
       // Listener for awareness changes made by remote users
       const awarenessChangeHandler = ({

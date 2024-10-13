@@ -154,7 +154,7 @@ export const getDeltaOperationsForYjs = (lastKnownElements: LastKnownOrderedElem
     return rest
   })
   
-  console.log("operations", operations)
+  // console.log("operations", operations)
   return {operations, lastKnownElements: updatedLastKnownElements};
 }
 
