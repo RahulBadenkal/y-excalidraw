@@ -11,7 +11,7 @@ COPY . .
 RUN npm install
 
 # Build the application
-RUN npm run build --workspace=@ide/demo
+RUN npm run build --workspace=@y-excalidraw/demo
 
 # Stage 2: Serve the application using a lightweight web server
 FROM nginx:alpine
