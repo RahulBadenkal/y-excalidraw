@@ -10,8 +10,13 @@ COPY . .
 # Install dependencies
 RUN npm install
 
+# Define build argument to inject during the build stage
+ARG VITE_SIGNALLING_SERVER
+
+RUN echo "VITE_SIGNALLING_SERVER is: $VITE_SIGNALLING_SERVER"
+
 # Build the application
-RUN npm run build --workspace=@y-excalidraw/demo
+RUN VITE_SIGNALLING_SERVER=$VITE_SIGNALLING_SERVER npm run build --workspace=@y-excalidraw/demo
 
 # Stage 2: Serve the application using a lightweight web server
 FROM nginx:alpine
