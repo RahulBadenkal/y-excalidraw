@@ -32,7 +32,7 @@ import { Excalidraw } from "@excalidraw/excalidraw";
 import * as Y from "yjs";
 
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types/types";
-import { ExcalidrawBinding, ExcalidrawAssetsBinding } from "@y-excalidraw/y-excalidraw"
+import { ExcalidrawBinding, ExcalidrawAssetsBinding } from "y-excalidraw"
 
 import { WebrtcProvider } from 'y-webrtc'
 
