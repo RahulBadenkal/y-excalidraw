@@ -4,6 +4,10 @@
 
 This binding binds a Y.Array to a Exacalidraw whiteboard.
 
+```
+npm install y-excalidraw
+```
+
 ## Features
 - Sync Excalidraw whiteboard
 - Awareness - Render remote cursor and selections
