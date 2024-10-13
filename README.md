@@ -19,7 +19,7 @@ The sync is at the excalidraw array item (element) level but not at the element 
 - Since on any change on the canvas, excalidraw onChange callback fires with the complete new state of the canvas but no diffs. So to make the app reactive at key level we would need to do a deep diff to figure out what key excatly changed. I am not sure how much extra runtime overhead this will introduce, will need to benchmark
 
 ## Helpful resources
-- Excalidraw team's blog on how they achieved p2p sharing with excalidraw in their SaaS offering -> [Link](https://blog.excalidraw.com/building-excalidraw-p2p-collaboration-feature/)
+- Excalidraw team's blog on how they achieved p2p sharing with excalidraw -> [Link](https://blog.excalidraw.com/building-excalidraw-p2p-collaboration-feature/)
 - How to move items in an array in a safe manner, yjs discussion -> [Link](https://discuss.yjs.dev/t/moving-elements-in-lists/92/15?u=rahulbadenkal)
 - Another intgeration of yjs with excalidraw. Most of the setup code is inspired from there -> [Link](https://github.com/satoren/y-phoenix-channel)
 - Code for the demo was taken from yjs-codemirror.next repo -> [Link](https://github.com/yjs/y-codemirror.next)
