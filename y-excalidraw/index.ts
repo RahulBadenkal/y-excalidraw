@@ -1,4 +1,3 @@
-import { getSceneVersion } from "@excalidraw/excalidraw";
 import type {
   BinaryFileData,
   Collaborator,
@@ -6,7 +5,7 @@ import type {
 } from "@excalidraw/excalidraw/types/types";
 import type * as awarenessProtocol from "y-protocols/awareness";
 import * as Y from "yjs"
-import { yjsToExcalidraw } from "./helpers";
+import { areElementsSame, yjsToExcalidraw } from "./helpers";
 import { applyOperations, getDeltaOperationsForYjs, LastKnownOrderedElement } from "./diff";
 
 export class ExcalidrawBinding {
@@ -15,7 +14,6 @@ export class ExcalidrawBinding {
   
   subscriptions: (() => void)[] = [];
   collaborators: Map<string, Collaborator> = new Map();
-  lastKnownSceneVersion: number = -1;
   lastKnownElements: LastKnownOrderedElement[] = []
 
   constructor(yArray: Y.Array<Y.Map<any>>, api: ExcalidrawImperativeAPI, private awareness?: awarenessProtocol.Awareness) {
@@ -26,11 +24,9 @@ export class ExcalidrawBinding {
     this.subscriptions.push(
       api.onChange(() => {
         const elements = api.getSceneElements()  // This returns without deleted elements
-        const sceneVersion = getSceneVersion(elements)
 
-        if (sceneVersion <= this.lastKnownSceneVersion) {
-          // This fires very often even when data is not changedk, so keeping a fast procedure to check if anything changed or not
-          // The logic is taken from excliadraw repo
+        if (areElementsSame(this.lastKnownElements, elements)) {
+          // This fires very often even when data is not changed, so keeping a fast procedure to check if anything changed or not
           // Even on move operations, the version property changes so this should work
           return
         }
@@ -39,7 +35,6 @@ export class ExcalidrawBinding {
         applyOperations(this.yArray, operations)
 
         this.lastKnownElements = lastKnownElements
-        this.lastKnownSceneVersion = sceneVersion
       }),
     );
 
@@ -52,7 +47,6 @@ export class ExcalidrawBinding {
       // console.log('remote changes')
       // elements changed outside this component, reflect the change in excalidraw ui
       const elements = yjsToExcalidraw(this.yArray)
-      this.lastKnownSceneVersion = getSceneVersion(elements)
       this.lastKnownElements = this.yArray.toArray().map((x) => ({id: x.get("el").id, version: x.get("el").version, pos: x.get("pos")}))
       this.api.updateScene({elements})
     }
@@ -115,7 +109,6 @@ export class ExcalidrawBinding {
 
     // init code
     const initialValue = yjsToExcalidraw(this.yArray)
-    this.lastKnownSceneVersion = getSceneVersion(initialValue)
     this.lastKnownElements = this.yArray.toArray().map((x) => ({id: x.get("el").id, version: x.get("el").version, pos: x.get("pos")}))
     this.api.updateScene({elements: initialValue});
   }
@@ -178,7 +171,7 @@ export class ExcalidrawAssetsBinding {
       [...yMap.keys()].map((key) => yMap.get(key) as BinaryFileData),
     );
   }
-  
+
   destroy() {
     for (const s of this.subscriptions) {
       s();
