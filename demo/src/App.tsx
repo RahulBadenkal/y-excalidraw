@@ -24,6 +24,7 @@ export const usercolors = [
 
 export const userColor = usercolors[random.uint32() % usercolors.length]
 
+console.log("ENV", SIGNALLING_SERVER)
 const ydoc = new Y.Doc()
 const provider = new WebrtcProvider('y-excalidraw-demo-room', ydoc, { signaling: [SIGNALLING_SERVER] })
 
