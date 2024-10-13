@@ -4,14 +4,11 @@ FROM node:18 AS build
 # Set working directory
 WORKDIR /app
 
-# Copy package.json
-COPY package.json .
+# Copy source code
+COPY . .
 
 # Install app dependencies
 RUN npm install
-
-# Copy source code
-COPY . .
 
 # Define build argument to inject during the build stage
 ARG VITE_SIGNALLING_SERVER
