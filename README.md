@@ -12,7 +12,6 @@ This binding binds a Y.Array to a Exacalidraw whiteboard.
 ## Todo
 - Shared Undo / Redo (each client has its own undo-/redo-history)
 - Add tests
-- Publish to npm
 
 ## Note
 The sync is at the excalidraw array item (element) level but not at the element key level. Even the excalidraw cloud offering doesn't support that ([Link](https://blog.excalidraw.com/building-excalidraw-p2p-collaboration-feature/)). It would not be very hard to add it here but there are 2 issues that might crop up
