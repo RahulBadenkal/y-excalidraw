@@ -84,8 +84,8 @@ export const getDeltaOperationsForYjs = (lastKnownElements: LastKnownOrderedElem
       runningIndex += 1
     }
   }
-  // Update ops tracker
   if (deleteOperations.length > 0) {
+    // Update ops tracker
     opsTracker.elementIds = newOpsTrackerElementIds
     _updateIdIndexLookup()
   }
