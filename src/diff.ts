@@ -113,7 +113,7 @@ export const getDeltaOperationsForYjs = (lastKnownElements: LastKnownOrderedElem
    
       // move to correct position, O(n)
       opsTracker.elementIds = moveArrayItem(opsTracker.elementIds, fromIndex, toIndex, true)
-      opsTracker.idMap[id].pos = newSortIndex  // update the elements sort index
+      opsTracker.idMap[id].pos = newSortIndex  // update the element's sort index
       _updateIdIndexLookup()  // update every items indices
       moveOperations.push({type: 'move', id, fromIndex, toIndex, pos: newSortIndex})
     }
