@@ -10,7 +10,7 @@ npm install y-excalidraw
 
 ## Features
 - Sync Excalidraw whiteboard
-- Awareness - Render remote cursor and selections
+- Awareness - Sync remote cursor and selections
 - Asset syncing
 
 ## Todo
