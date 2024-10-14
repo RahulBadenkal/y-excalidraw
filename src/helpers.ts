@@ -16,8 +16,7 @@ export const areElementsSame = (els1: readonly {id: string, version: number}[], 
   }
 
   for (let i=0; i<els1.length; i++) {
-    const [el1, el2] = [els1[i], els2[i]]
-    if (el1.id !== el2.id || el1.version !== el2.version ) {
+    if (els1[i].id !==  els2[i].id || els1[i].version !== els2[i].version ) {
       return false
     }
   }

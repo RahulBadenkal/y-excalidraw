@@ -85,8 +85,10 @@ export const getDeltaOperationsForYjs = (lastKnownElements: LastKnownOrderedElem
     }
   }
   // Update ops tracker
-  opsTracker.elementIds = newOpsTrackerElementIds
-  _updateIdIndexLookup()
+  if (deleteOperations.length > 0) {
+    opsTracker.elementIds = newOpsTrackerElementIds
+    _updateIdIndexLookup()
+  }
 
   // Find move operations
   for (let toIndex = 0; toIndex < newElements.length; toIndex++) {
