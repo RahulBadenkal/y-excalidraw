@@ -7,6 +7,7 @@ import type * as awarenessProtocol from "y-protocols/awareness";
 import * as Y from "yjs"
 import { areElementsSame, yjsToExcalidraw } from "./helpers";
 import { applyAssetOperations, applyElementOperations, getDeltaOperationsForAssets, getDeltaOperationsForElements, LastKnownOrderedElement, Operation } from "./diff";
+export { yjsToExcalidraw }
 
 export class ExcalidrawBinding {
   yElements: Y.Array<Y.Map<any>>
@@ -29,6 +30,14 @@ export class ExcalidrawBinding {
     this.undoManager = undoManager
     this.subscriptions.push(() => this.undoManager.destroy())
 
+    // init code
+    const initialValue = yjsToExcalidraw(this.yElements)
+    this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
+    this.api.updateScene({ elements: initialValue });
+    this.api.addFiles(
+      [...this.yAssets.keys()].map((key) => this.yAssets.get(key) as BinaryFileData),
+    );
+    
     // Listener for changes made on excalidraw by current user
     this.subscriptions.push(
       this.api.onChange((_, state, files) => {
@@ -139,14 +148,6 @@ export class ExcalidrawBinding {
     if (this.undoManager) {
       this.setupUndoRedo(excalidrawDom)
     }
-
-    // init code
-    const initialValue = yjsToExcalidraw(this.yElements)
-    this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
-    this.api.updateScene({ elements: initialValue });
-    this.api.addFiles(
-      [...this.yAssets.keys()].map((key) => this.yAssets.get(key) as BinaryFileData),
-    );
   }
 
   public onPointerUpdate = (payload: {

@@ -4,7 +4,7 @@ import { Excalidraw } from "@excalidraw/excalidraw";
 import * as Y from "yjs";
 
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types/types";
-import { ExcalidrawBinding } from "../../src"
+import { ExcalidrawBinding, yjsToExcalidraw } from "../../src"
 
 import { WebrtcProvider } from 'y-webrtc'
 
@@ -60,9 +60,13 @@ export default function App() {
     };
   }, [api]);
 
+  const initData = {
+    elements: yjsToExcalidraw(yElements)
+  }
   return (
     <div style={{width: "100vw", height: "100vh"}} ref={excalidrawRef}>
       <Excalidraw
+        initialData={initData}
         excalidrawAPI={setApi}
         onPointerUpdate={binding?.onPointerUpdate}
         theme="light"
