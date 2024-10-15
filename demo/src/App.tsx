@@ -68,7 +68,7 @@ export default function App() {
       <Excalidraw
         initialData={initData}
         excalidrawAPI={setApi}
-        onPointerUpdate={binding?.onPointerUpdate}
+        onPointerUpdate={(payload) => binding && binding.onPointerUpdate(payload)}
         theme="light"
       />
     </div>
