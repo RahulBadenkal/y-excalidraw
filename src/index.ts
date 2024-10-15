@@ -26,7 +26,7 @@ export class ExcalidrawBinding {
     this.yAssets = yAssets;
     this.api = api;
     this.awareness = awareness;
-    this.undoManager = new Y.UndoManager(this.yElements, {trackedOrigins: new Set([this])})
+    this.undoManager = new Y.UndoManager(this.yElements)
     this.subscriptions.push(() => this.undoManager.destroy())
 
     // Listener for changes made on excalidraw by current user
