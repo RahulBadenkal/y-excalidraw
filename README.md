@@ -28,6 +28,12 @@ The sync is at the excalidraw array item (element) level but not at the element 
 - Another intgeration of yjs with excalidraw. Most of the setup code is inspired from there -> [Link](https://github.com/satoren/y-phoenix-channel)
 - Code for the demo was taken from yjs-codemirror.next repo -> [Link](https://github.com/yjs/y-codemirror.next)
 
+## Getting Started
+Install y-excalidraw (Make sure excalidraw and yjs are already installed)
+```
+npm install y-excalidraw
+```
+
 ## Example
 ```typescript
 import * as React from "react";
