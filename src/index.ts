@@ -26,7 +26,7 @@ export class ExcalidrawBinding {
     this.yAssets = yAssets;
     this.api = api;
     this.awareness = awareness;
-    this.undoManager = new Y.UndoManager(this.yElements, {trackedOrigins: new Set(['track']), ignoreRemoteMapChanges: false})
+    this.undoManager = new Y.UndoManager(this.yElements, {captureTimeout: 0})
 
     // Listener for changes made on excalidraw by current user
     this.subscriptions.push(
@@ -59,25 +59,26 @@ export class ExcalidrawBinding {
           );
         }
 
-        if (operations.length > 0 || assetOperations.length > 0) {
-          console.log("elements", elements, "files", files)
-        }
+        // if (operations.length > 0 || assetOperations.length > 0) {
+        //   console.log("elements", elements, "files", files)
+        // }
       }),
     );
 
     const _undo = () => {
       this.undoManager.undo()
       // debugger
-      const elements = yjsToExcalidraw(this.yElements)
-      this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
-      this.api.updateScene({ elements })
+      // const elements = yjsToExcalidraw(this.yElements)
+      // this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
+      // this.api.updateScene({ elements })
+      // console.log(this.lastKnownElements)
     }
 
     const _redo = () => {
       this.undoManager.redo()
-      const elements = yjsToExcalidraw(this.yElements)
-      this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
-      this.api.updateScene({ elements })
+      // const elements = yjsToExcalidraw(this.yElements)
+      // this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
+      // this.api.updateScene({ elements })
     }
 
     // listen for undo/redo keys
@@ -119,11 +120,12 @@ export class ExcalidrawBinding {
     // Listener for changes made on yElements by remote users
     const _remoteElementsChangeHandler = (event: Array<Y.YEvent<any>>, txn: Y.Transaction) => {
       // debugger
-      if (txn.local) {
+      if (txn.origin !== this.undoManager && txn.local) {
         return
       }
 
-      console.log("Remote update")
+      console.log("Remote update", event, (event as any)[0].changes.delta)
+      console.log(JSON.parse(JSON.stringify(yjsToExcalidraw(this.yElements))))
       // console.log('remote changes')
       // elements changed outside this component, reflect the change in excalidraw ui
       const elements = yjsToExcalidraw(this.yElements)
@@ -135,7 +137,7 @@ export class ExcalidrawBinding {
 
     // Listener for changes made on yAssets by remote users
     const _remoteFilesChangeHandler = (events: Y.YMapEvent<any>, txn: Y.Transaction) => {
-      if (txn.local) {
+      if (txn.origin !== this.undoManager && txn.local) {
         return
       }
 

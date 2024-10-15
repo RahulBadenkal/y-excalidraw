@@ -1,5 +1,5 @@
 import { ExcalidrawElement, NonDeletedExcalidrawElement } from "@excalidraw/excalidraw/types/element/types"
-import { moveArrayItem } from "./helpers"
+import { moveArrayItem, yjsToExcalidraw } from "./helpers"
 import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
 import * as Y from 'yjs'
 import { BinaryFileData, BinaryFiles } from "@excalidraw/excalidraw/types/types";
@@ -257,7 +257,9 @@ export const applyElementOperations = (yElements: Y.Array<Y.Map<any>>, operation
         }
       }
     }
-  }, "track")
+  })
+
+  console.log('operations', JSON.parse(JSON.stringify(operations)), 'yElements', JSON.parse(JSON.stringify(yjsToExcalidraw(yElements))))
 }
 
 export const applyAssetOperations = (yAssets: Y.Map<any>, operations: AssetOperation[]) => {

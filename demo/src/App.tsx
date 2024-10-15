@@ -40,10 +40,24 @@ export default function App() {
   const [api, setApi] = React.useState<ExcalidrawImperativeAPI | null>(null);
   const [binding, setBindings] = React.useState<ExcalidrawBinding | null>(null);
   const excalidrawRef = React.useRef(null);
+  const [items, setItems] = React.useState<any[]>([]);
 
   React.useEffect(() => {
     if (!api) return;
     
+    const updateFromYjs = () => {
+      // Convert each Y.Map to a plain object for rendering
+      const plainItems = JSON.parse(JSON.stringify(yElements.toJSON()))
+      setItems(plainItems);
+    };
+
+    // Listen to changes in the Yjs array
+    yElements.observeDeep(updateFromYjs);
+
+    // Initialize the items state with the current Yjs array values
+    updateFromYjs();
+
+
     const binding = new ExcalidrawBinding(
       yElements as any,
       yAssets,
@@ -61,9 +75,8 @@ export default function App() {
 
   return (
     <div style={{ height: "100vh" }}>
-      <div style={{height: "150px", backgroundColor: "green"}}>
-        <div style={{ height: "50%" }}>Hello</div>
-        <div style={{ height: "50%" }}>Hi</div>
+      <div style={{height: "150px", backgroundColor: "green", overflow: 'auto'}}>
+        <pre>{JSON.stringify(items, null, 2)}</pre>
       </div>
       <div style={{height: 'calc(100vh - 150px)'}} ref={excalidrawRef}>
         <Excalidraw
