@@ -36,7 +36,7 @@ import { Excalidraw } from "@excalidraw/excalidraw";
 import * as Y from "yjs";
 
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types/types";
-import { ExcalidrawBinding, ExcalidrawAssetsBinding } from "y-excalidraw"
+import { ExcalidrawBinding } from "y-excalidraw"
 
 import { WebrtcProvider } from 'y-webrtc'
 
@@ -56,6 +56,9 @@ export const usercolors = [
 export const userColor = usercolors[random.uint32() % usercolors.length]
 
 const ydoc = new Y.Doc()
+const yElements = ydoc.getArray<Y.Map<any>>('elements');
+const yAssets = ydoc.getMap('assets');
+
 const provider = new WebrtcProvider('y-excalidraw-demo-room', ydoc)
 
 provider.awareness.setLocalStateField('user', {
@@ -67,29 +70,27 @@ provider.awareness.setLocalStateField('user', {
 export default function App() {
   const [api, setApi] = React.useState<ExcalidrawImperativeAPI | null>(null);
   const [binding, setBindings] = React.useState<ExcalidrawBinding | null>(null);
+  const excalidrawRef = React.useRef(null);
 
   React.useEffect(() => {
     if (!api) return;
 
     const binding = new ExcalidrawBinding(
-      ydoc.getArray("excalidraw"),
+      yElements,
+      yAssets,
+      excalidrawRef.current,
       api,
       provider.awareness,
     );
     setBindings(binding);
-    const assetBinding = new ExcalidrawAssetsBinding(
-      ydoc.getMap("assets"),
-      api,
-    );
     return () => {
       setBindings(null);
       binding.destroy();
-      assetBinding.destroy();
     };
   }, [api]);
 
   return (
-    <div style={{ height: "100vh" }}>
+    <div style={{width: "100vw", height: "100vh"}} ref={excalidrawRef}>
       <Excalidraw
         excalidrawAPI={setApi}
         onPointerUpdate={binding?.onPointerUpdate}
@@ -98,4 +99,11 @@ export default function App() {
     </div>
   );
 }
+```
+
+If you want to get the excalidraw json array, you can use the utility function
+```typescript
+import { yjsToExcalidraw } from "y-excalidraw/helpers"
+
+console.log("Excalidraw json", yjsToExcalidraw(yElements))
 ```

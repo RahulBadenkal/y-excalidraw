@@ -25,7 +25,7 @@ export const usercolors = [
 export const userColor = usercolors[random.uint32() % usercolors.length]
 
 const ydoc = new Y.Doc()
-const yElements = ydoc.getArray('elements');
+const yElements = ydoc.getArray<Y.Map<any>>('elements');
 const yAssets = ydoc.getMap('assets');
 
 const provider = new WebrtcProvider('y-excalidraw-demo-room', ydoc, { signaling: [SIGNALLING_SERVER] })
@@ -40,33 +40,19 @@ export default function App() {
   const [api, setApi] = React.useState<ExcalidrawImperativeAPI | null>(null);
   const [binding, setBindings] = React.useState<ExcalidrawBinding | null>(null);
   const excalidrawRef = React.useRef(null);
-  const [items, setItems] = React.useState<any[]>([]);
 
   React.useEffect(() => {
     if (!api) return;
-    
-    const updateFromYjs = () => {
-      // Convert each Y.Map to a plain object for rendering
-      const plainItems = JSON.parse(JSON.stringify(yElements.toJSON()))
-      setItems(plainItems);
-    };
-
-    // Listen to changes in the Yjs array
-    yElements.observeDeep(updateFromYjs);
-
-    // Initialize the items state with the current Yjs array values
-    updateFromYjs();
-
 
     const binding = new ExcalidrawBinding(
-      yElements as any,
+      yElements,
       yAssets,
       excalidrawRef.current,
       api,
       provider.awareness,
     );
     setBindings(binding);
- 
+
     return () => {
       setBindings(null);
       binding.destroy();
@@ -74,17 +60,12 @@ export default function App() {
   }, [api]);
 
   return (
-    <div style={{ height: "100vh" }}>
-      <div style={{height: "150px", backgroundColor: "green", overflow: 'auto'}}>
-        <pre>{JSON.stringify(items, null, 2)}</pre>
-      </div>
-      <div style={{height: 'calc(100vh - 150px)'}} ref={excalidrawRef}>
-        <Excalidraw
-          excalidrawAPI={setApi}
-          onPointerUpdate={binding?.onPointerUpdate}
-          theme="light"
-        />
-      </div>
+    <div style={{width: "100vw", height: "100vh"}} ref={excalidrawRef}>
+      <Excalidraw
+        excalidrawAPI={setApi}
+        onPointerUpdate={binding?.onPointerUpdate}
+        theme="light"
+      />
     </div>
   );
 }
