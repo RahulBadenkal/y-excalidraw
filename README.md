@@ -86,7 +86,7 @@ export default function App() {
     const binding = new ExcalidrawBinding(
       yElements,
       yAssets,
-      excalidrawRef.current,
+      excalidrawRef.current,  // excalidraw dom is needed to override the undo/redo buttons in the UI as there is no way to pass it via props in excalidraw
       api,
       provider.awareness,
       new Y.UndoManager(yElements),
