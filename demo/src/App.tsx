@@ -50,6 +50,7 @@ export default function App() {
       excalidrawRef.current,
       api,
       provider.awareness,
+      new Y.UndoManager(yElements),
     );
     setBindings(binding);
 

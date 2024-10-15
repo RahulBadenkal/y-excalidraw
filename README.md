@@ -9,12 +9,12 @@ npm install y-excalidraw
 ```
 
 ## Features
-- Sync Excalidraw whiteboard
-- Sync remote cursor and selections
-- Asset syncing
+- Sync Excalidraw whiteboard elements
+- Awareness: Sync remote cursor and selections
+- Assets/Files syncing
+- Shared Undo / Redo (each client has its own undo-/redo-history) - as a separate plugin
 
 ## Todo
-- Shared Undo / Redo (each client has its own undo-/redo-history)
 - Add tests
 
 ## Note
@@ -81,6 +81,7 @@ export default function App() {
       excalidrawRef.current,
       api,
       provider.awareness,
+      new Y.UndoManager(yElements),
     );
     setBindings(binding);
     return () => {

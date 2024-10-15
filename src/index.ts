@@ -21,17 +21,17 @@ export class ExcalidrawBinding {
   lastKnownElements: LastKnownOrderedElement[] = []
   lastKnownFileIds: Set<string>
 
-  constructor(yElements: Y.Array<Y.Map<any>>, yAssets: Y.Map<any>, excalidrawDom: HTMLElement, api: ExcalidrawImperativeAPI, awareness?: awarenessProtocol.Awareness) {
+  constructor(yElements: Y.Array<Y.Map<any>>, yAssets: Y.Map<any>, excalidrawDom: HTMLElement, api: ExcalidrawImperativeAPI, awareness?: awarenessProtocol.Awareness, undoManager?: Y.UndoManager) {
     this.yElements = yElements;
     this.yAssets = yAssets;
     this.api = api;
     this.awareness = awareness;
-    this.undoManager = new Y.UndoManager(this.yElements)
+    this.undoManager = undoManager
     this.subscriptions.push(() => this.undoManager.destroy())
 
     // Listener for changes made on excalidraw by current user
     this.subscriptions.push(
-      this.api.onChange((_, state, files) => {      
+      this.api.onChange((_, state, files) => {
         // TODO: Excalidraw doesn't delete the asset from the map when the associated item is deleted.
         const elements = this.api.getSceneElements()  // This returns without deleted elements
 
@@ -61,38 +61,6 @@ export class ExcalidrawBinding {
         }
       }),
     );
-
-    // listen for undo/redo keys
-    const _keyPressHandler = (event) => {
-      if (event.ctrlKey && event.shiftKey && event.key?.toLocaleLowerCase() === 'z') {
-        event.stopPropagation();
-        this.undoManager.redo()
-      }
-      else if (event.ctrlKey && event.key?.toLocaleLowerCase() === 'z') {
-        event.stopPropagation();
-        this.undoManager.undo()
-      }
-    }
-    excalidrawDom.addEventListener('keydown', _keyPressHandler, { capture: true });
-    this.subscriptions.push(() => excalidrawDom?.removeEventListener('keydown', _keyPressHandler, { capture: true }))
-
-
-    // hijack the undo/redo buttons on the canvas
-    const _undoBtnHandler = (event) => {
-      event.stopImmediatePropagation();
-      this.undoManager.undo()
-    }
-    const undoButton = excalidrawDom.querySelector('[aria-label="Undo"]');
-    undoButton.addEventListener('click', _undoBtnHandler);
-    this.subscriptions.push(() => undoButton?.removeEventListener('click', _undoBtnHandler))
-
-    const _redoBtnHandler = (event) => {
-      event.stopImmediatePropagation();
-      this.undoManager.redo()
-    }
-    const redoButton = excalidrawDom.querySelector('[aria-label="Redo"]');
-    redoButton.addEventListener('click', _redoBtnHandler);
-    this.subscriptions.push(() => redoButton?.removeEventListener('click', _redoBtnHandler))
 
     // Listener for changes made on yElements by remote users
     const _remoteElementsChangeHandler = (event: Array<Y.YEvent<any>>, txn: Y.Transaction) => {
@@ -168,6 +136,10 @@ export class ExcalidrawBinding {
       });
     }
 
+    if (this.undoManager) {
+      this.setupUndoRedo(excalidrawDom)
+    }
+
     // init code
     const initialValue = yjsToExcalidraw(this.yElements)
     this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
@@ -190,6 +162,42 @@ export class ExcalidrawBinding {
       this.awareness.setLocalStateField("button", payload.button);
     }
   };
+
+  private setupUndoRedo(excalidrawDom: HTMLElement) {
+    this.undoManager.addTrackedOrigin(this)
+    this.subscriptions.push(() => this.undoManager.removeTrackedOrigin(this))
+
+    // listen for undo/redo keys
+    const _keyPressHandler = (event) => {
+      if (event.ctrlKey && event.shiftKey && event.key?.toLocaleLowerCase() === 'z') {
+        event.stopPropagation();
+        this.undoManager.redo()
+      }
+      else if (event.ctrlKey && event.key?.toLocaleLowerCase() === 'z') {
+        event.stopPropagation();
+        this.undoManager.undo()
+      }
+    }
+    excalidrawDom.addEventListener('keydown', _keyPressHandler, { capture: true });
+    this.subscriptions.push(() => excalidrawDom?.removeEventListener('keydown', _keyPressHandler, { capture: true }))
+
+    // hijack the undo/redo buttons on the canvas
+    const _undoBtnHandler = (event) => {
+      event.stopImmediatePropagation();
+      this.undoManager.undo()
+    }
+    const undoButton = excalidrawDom.querySelector('[aria-label="Undo"]');
+    undoButton.addEventListener('click', _undoBtnHandler);
+    this.subscriptions.push(() => undoButton?.removeEventListener('click', _undoBtnHandler))
+
+    const _redoBtnHandler = (event) => {
+      event.stopImmediatePropagation();
+      this.undoManager.redo()
+    }
+    const redoButton = excalidrawDom.querySelector('[aria-label="Redo"]');
+    redoButton.addEventListener('click', _redoBtnHandler);
+    this.subscriptions.push(() => redoButton?.removeEventListener('click', _redoBtnHandler))
+  }
 
   destroy() {
     for (const s of this.subscriptions) {
