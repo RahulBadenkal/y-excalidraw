@@ -6,66 +6,95 @@ import type {
 import type * as awarenessProtocol from "y-protocols/awareness";
 import * as Y from "yjs"
 import { areElementsSame, yjsToExcalidraw } from "./helpers";
-import { applyOperations, getDeltaOperationsForYjs, LastKnownOrderedElement } from "./diff";
+import { applyAssetOperations, applyElementOperations, getDeltaOperationsForAssets, getDeltaOperationsForElements, LastKnownOrderedElement, Operation } from "./diff";
 
 export class ExcalidrawBinding {
-  yArray: Y.Array<Y.Map<any>>
-  api: ExcalidrawImperativeAPI
-  
+  yElements: Y.Array<Y.Map<any>>
+  yAssets: Y.Map<any>
+  dom: HTMLElement
+  api: ExcalidrawImperativeAPI;
+  undoManager: Y.UndoManager
+  awareness?: awarenessProtocol.Awareness;
+
   subscriptions: (() => void)[] = [];
   collaborators: Map<string, Collaborator> = new Map();
   lastKnownElements: LastKnownOrderedElement[] = []
+  lastKnownFileIds: Set<string>
 
-  constructor(yArray: Y.Array<Y.Map<any>>, api: ExcalidrawImperativeAPI, private awareness?: awarenessProtocol.Awareness) {
-    this.yArray = yArray
-    this.api = api
-    
+  constructor(yElements: Y.Array<Y.Map<any>>, yAssets: Y.Map<any>, excalidrawDom: HTMLElement, api: ExcalidrawImperativeAPI, awareness?: awarenessProtocol.Awareness, undoManager?: Y.UndoManager) {
+    this.yElements = yElements;
+    this.yAssets = yAssets;
+    this.api = api;
+    this.awareness = awareness;
+    this.undoManager = undoManager
+    this.subscriptions.push(() => this.undoManager.destroy())
+
     // Listener for changes made on excalidraw by current user
     this.subscriptions.push(
-      api.onChange(() => {
-        const elements = api.getSceneElements()  // This returns without deleted elements
+      this.api.onChange((_, state, files) => {
+        // TODO: Excalidraw doesn't delete the asset from the map when the associated item is deleted.
+        const elements = this.api.getSceneElements()  // This returns without deleted elements
 
-        if (areElementsSame(this.lastKnownElements, elements)) {
-          // This fires very often even when data is not changed, so keeping a fast procedure to check if anything changed or not
-          // Even on move operations, the version property changes so this should work
-          return
+        // This fires very often even when data is not changed, so keeping a fast procedure to check if anything changed or not
+        // Even on move operations, the version property changes so this should work
+        let operations: Operation[] = []
+        if (!areElementsSame(this.lastKnownElements, elements)) {
+          const res = getDeltaOperationsForElements(this.lastKnownElements, elements)
+          operations = res.operations
+          this.lastKnownElements = res.lastKnownElements
+          applyElementOperations(this.yElements, operations, this)
         }
 
-        const {operations, lastKnownElements} = getDeltaOperationsForYjs(this.lastKnownElements, elements)
-        applyOperations(this.yArray, operations)
+        const res = getDeltaOperationsForAssets(this.lastKnownFileIds, files)
+        const assetOperations = res.operations
+        this.lastKnownFileIds = res.lastKnownFileIds
+        if (assetOperations.length > 0) {
+          applyAssetOperations(this.yAssets, assetOperations, this)
+        }
 
-        this.lastKnownElements = lastKnownElements
-      }),
-    );
-
-    // Listener for changes made on yArray by remote users
-    const observer = (event: any, transaction: any) => {
-      if (transaction.origin === this) {
-        return
-      }
-  
-      // console.log('remote changes')
-      // elements changed outside this component, reflect the change in excalidraw ui
-      const elements = yjsToExcalidraw(this.yArray)
-      this.lastKnownElements = this.yArray.toArray().map((x) => ({id: x.get("el").id, version: x.get("el").version, pos: x.get("pos")}))
-      this.api.updateScene({elements})
-    }
-    this.yArray.observeDeep(observer)
-    this.subscriptions.push(() => this.yArray.unobserveDeep(observer))
-
-    if (this.awareness) {
-      // Listener for changes made to selected elements by current user
-      this.subscriptions.push(
-        api.onChange((_, state) => {
-          this.awareness!.setLocalStateField(
+        if (this.awareness) {
+          // update selected awareness
+          this.awareness.setLocalStateField(
             "selectedElementIds",
             state.selectedElementIds,
           );
-        })
-      )
-      
+        }
+      }),
+    );
+
+    // Listener for changes made on yElements by remote users
+    const _remoteElementsChangeHandler = (event: Array<Y.YEvent<any>>, txn: Y.Transaction) => {
+      if (txn.origin === this) {
+        return
+      }
+
+      // elements changed outside this component, reflect the change in excalidraw ui
+      const elements = yjsToExcalidraw(this.yElements)
+      this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
+      this.api.updateScene({ elements })
+    }
+    this.yElements.observeDeep(_remoteElementsChangeHandler)
+    this.subscriptions.push(() => this.yElements.unobserveDeep(_remoteElementsChangeHandler))
+
+    // Listener for changes made on yAssets by remote users
+    const _remoteFilesChangeHandler = (events: Y.YMapEvent<any>, txn: Y.Transaction) => {
+      if (txn.origin === this) {
+        return
+      }
+
+      const addedFiles = [...events.keysChanged].map(
+        (key) => this.yAssets.get(key) as BinaryFileData,
+      );
+      this.api.addFiles(addedFiles);
+    }
+    this.yAssets.observe(_remoteFilesChangeHandler);  // only observe and not observe deep as assets are only added/deleted not updated
+    this.subscriptions.push(() => {
+      this.yAssets.unobserve(_remoteFilesChangeHandler);
+    });
+
+    if (this.awareness) {
       // Listener for awareness changes made by remote users
-      const awarenessChangeHandler = ({
+      const _remoteAwarenessChangeHandler = ({
         added,
         updated,
         removed,
@@ -74,7 +103,7 @@ export class ExcalidrawBinding {
         updated: number[];
         removed: number[];
       }) => {
-        const states = this.awareness!.getStates();
+        const states = this.awareness.getStates();
 
         const collaborators = new Map(this.collaborators);
         const update = [...added, ...updated];
@@ -97,20 +126,27 @@ export class ExcalidrawBinding {
         for (const id of removed) {
           collaborators.delete(id.toString());
         }
-        collaborators.delete(this.awareness!.clientID.toString());
-        api.updateScene({collaborators});
+        collaborators.delete(this.awareness.clientID.toString());
+        this.api.updateScene({ collaborators });
         this.collaborators = collaborators;
       };
-      this.awareness.on("change", awarenessChangeHandler);
+      this.awareness.on("change", _remoteAwarenessChangeHandler);
       this.subscriptions.push(() => {
-        this.awareness!.off("change", awarenessChangeHandler);
+        this.awareness.off("change", _remoteAwarenessChangeHandler);
       });
     }
 
+    if (this.undoManager) {
+      this.setupUndoRedo(excalidrawDom)
+    }
+
     // init code
-    const initialValue = yjsToExcalidraw(this.yArray)
-    this.lastKnownElements = this.yArray.toArray().map((x) => ({id: x.get("el").id, version: x.get("el").version, pos: x.get("pos")}))
-    this.api.updateScene({elements: initialValue});
+    const initialValue = yjsToExcalidraw(this.yElements)
+    this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
+    this.api.updateScene({ elements: initialValue });
+    this.api.addFiles(
+      [...this.yAssets.keys()].map((key) => this.yAssets.get(key) as BinaryFileData),
+    );
   }
 
   public onPointerUpdate = (payload: {
@@ -121,55 +157,46 @@ export class ExcalidrawBinding {
     };
     button: "down" | "up";
   }) => {
-    this.awareness?.setLocalStateField("pointer", payload.pointer);
-    this.awareness?.setLocalStateField("button", payload.button);
+    if (this.awareness) {
+      this.awareness.setLocalStateField("pointer", payload.pointer);
+      this.awareness.setLocalStateField("button", payload.button);
+    }
   };
 
-  destroy() {
-    for (const s of this.subscriptions) {
-      s();
-    }
-  }
-}
+  private setupUndoRedo(excalidrawDom: HTMLElement) {
+    this.undoManager.addTrackedOrigin(this)
+    this.subscriptions.push(() => this.undoManager.removeTrackedOrigin(this))
 
-export class ExcalidrawAssetsBinding {
-  subscriptions: (() => void)[] = [];
-
-  constructor(yMap: Y.Map<any>, api: ExcalidrawImperativeAPI) {
-    this.subscriptions.push(
-      api.onChange((_element, _appstate, files) => {
-        const doc = yMap.doc;
-        doc?.transact(() => {
-          for (const key in files) {
-            // Asset once added is never updated
-            // TODO: If an asset is deleted, excalidraw doesn't delete it from the files map. Clean that up somehow as size will increase
-            if (!yMap.get(key)) {
-              yMap.set(key, files[key]);
-            }
-          }
-        }, this);
-      }),
-    );
-
-    const handler = (events: Y.YMapEvent<any>, txn: Y.Transaction) => {
-      if (txn.origin === this) {
-        return;
+    // listen for undo/redo keys
+    const _keyPressHandler = (event) => {
+      if (event.ctrlKey && event.shiftKey && event.key?.toLocaleLowerCase() === 'z') {
+        event.stopPropagation();
+        this.undoManager.redo()
       }
+      else if (event.ctrlKey && event.key?.toLocaleLowerCase() === 'z') {
+        event.stopPropagation();
+        this.undoManager.undo()
+      }
+    }
+    excalidrawDom.addEventListener('keydown', _keyPressHandler, { capture: true });
+    this.subscriptions.push(() => excalidrawDom?.removeEventListener('keydown', _keyPressHandler, { capture: true }))
 
-      const addedFiles = [...events.keysChanged].map(
-        (key) => yMap.get(key) as BinaryFileData,
-      );
-      api.addFiles(addedFiles);
-    };
-    yMap.observe(handler);
-    this.subscriptions.push(() => {
-      yMap.unobserve(handler);
-    });
+    // hijack the undo/redo buttons on the canvas
+    const _undoBtnHandler = (event) => {
+      event.stopImmediatePropagation();
+      this.undoManager.undo()
+    }
+    const undoButton = excalidrawDom.querySelector('[aria-label="Undo"]');
+    undoButton.addEventListener('click', _undoBtnHandler);
+    this.subscriptions.push(() => undoButton?.removeEventListener('click', _undoBtnHandler))
 
-    // set initial
-    api.addFiles(
-      [...yMap.keys()].map((key) => yMap.get(key) as BinaryFileData),
-    );
+    const _redoBtnHandler = (event) => {
+      event.stopImmediatePropagation();
+      this.undoManager.redo()
+    }
+    const redoButton = excalidrawDom.querySelector('[aria-label="Redo"]');
+    redoButton.addEventListener('click', _redoBtnHandler);
+    this.subscriptions.push(() => redoButton?.removeEventListener('click', _redoBtnHandler))
   }
 
   destroy() {
