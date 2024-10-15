@@ -16,6 +16,8 @@ npm install y-excalidraw
 
 ## Todo
 - Add tests
+- Check the feasibility of making every element key collaborative
+- Add benchmarkjs
 
 ## Note
 The sync is at the excalidraw array item (element) level but not at the element key level. Even the excalidraw cloud offering doesn't support that ([Link](https://blog.excalidraw.com/building-excalidraw-p2p-collaboration-feature/)). It would not be very hard to add it here but there are 2 issues that might crop up
