@@ -26,7 +26,7 @@ export class ExcalidrawBinding {
     this.yAssets = yAssets;
     this.api = api;
     this.awareness = awareness;
-    this.undoManager = new Y.UndoManager(this.yElements)
+    this.undoManager = new Y.UndoManager(this.yElements, {trackedOrigins: new Set([this])})
     this.subscriptions.push(() => this.undoManager.destroy())
 
     // Listener for changes made on excalidraw by current user
@@ -42,14 +42,14 @@ export class ExcalidrawBinding {
           const res = getDeltaOperationsForElements(this.lastKnownElements, elements)
           operations = res.operations
           this.lastKnownElements = res.lastKnownElements
-          applyElementOperations(this.yElements, operations, this.undoManager)
+          applyElementOperations(this.yElements, operations, this)
         }
 
         const res = getDeltaOperationsForAssets(this.lastKnownFileIds, files)
         const assetOperations = res.operations
         this.lastKnownFileIds = res.lastKnownFileIds
         if (assetOperations.length > 0) {
-          applyAssetOperations(this.yAssets, assetOperations)
+          applyAssetOperations(this.yAssets, assetOperations, this)
         }
 
         if (this.awareness) {
@@ -96,8 +96,7 @@ export class ExcalidrawBinding {
 
     // Listener for changes made on yElements by remote users
     const _remoteElementsChangeHandler = (event: Array<Y.YEvent<any>>, txn: Y.Transaction) => {
-      if (txn.origin !== this.undoManager && txn.local) {
-        // Only update whiteboard when changes come from remote or undomanager
+      if (txn.origin === this) {
         return
       }
 
@@ -111,7 +110,7 @@ export class ExcalidrawBinding {
 
     // Listener for changes made on yAssets by remote users
     const _remoteFilesChangeHandler = (events: Y.YMapEvent<any>, txn: Y.Transaction) => {
-      if (txn.local) {
+      if (txn.origin === this) {
         return
       }
 

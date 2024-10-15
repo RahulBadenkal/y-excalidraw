@@ -3,6 +3,7 @@ import { moveArrayItem, yjsToExcalidraw } from "./helpers"
 import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
 import * as Y from 'yjs'
 import { BinaryFileData, BinaryFiles } from "@excalidraw/excalidraw/types/types";
+import { ExcalidrawBinding } from "./index";
 
 
 export type UpdateOperation = { type: 'update', id: string, index: number, element: ExcalidrawElement }
@@ -193,7 +194,7 @@ export const getDeltaOperationsForAssets = (lastKnownFileIds: Set<string>, files
   return {operations, lastKnownFileIds: newFields}
 }
 
-export const applyElementOperations = (yElements: Y.Array<Y.Map<any>>, operations: Operation[], undoManager: Y.UndoManager) => {
+export const applyElementOperations = (yElements: Y.Array<Y.Map<any>>, operations: Operation[], instance: ExcalidrawBinding) => {
   // NOTE: yArray doesn't support a move operation (that is reordering elements within an array).
   // So to re-order the only way is to delete the element and insert it at the desired location
   // But that can lead to duplocation in some cases (when 1 person updates the same element and other reorders it)
@@ -257,10 +258,10 @@ export const applyElementOperations = (yElements: Y.Array<Y.Map<any>>, operation
         }
       }
     }
-  })
+  }, instance)
 }
 
-export const applyAssetOperations = (yAssets: Y.Map<any>, operations: AssetOperation[]) => {
+export const applyAssetOperations = (yAssets: Y.Map<any>, operations: AssetOperation[], instance: ExcalidrawBinding) => {
   yAssets.doc!.transact(tr => {
     for (let op of operations) {
       switch (op.type) {
@@ -274,5 +275,5 @@ export const applyAssetOperations = (yAssets: Y.Map<any>, operations: AssetOpera
         }
       }
     }
-  })
+  }, instance)
 }
