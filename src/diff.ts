@@ -2,6 +2,7 @@ import { ExcalidrawElement, NonDeletedExcalidrawElement } from "@excalidraw/exca
 import { moveArrayItem } from "./helpers"
 import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
 import * as Y from 'yjs'
+import { BinaryFileData, BinaryFiles } from "@excalidraw/excalidraw/types/types";
 
 
 export type UpdateOperation = { type: 'update', id: string, index: number, element: ExcalidrawElement }
@@ -17,7 +18,7 @@ type OperationTracker = { elementIds: string[], idMap: { [id: string]: { id: str
 
 export type LastKnownOrderedElement = {id: string, version: number, pos: string}
 
-export const getDeltaOperationsForYjs = (lastKnownElements: LastKnownOrderedElement[], newElements: readonly NonDeletedExcalidrawElement[], bulkify = true): {operations: Operation[], lastKnownElements: LastKnownOrderedElement[]} => {
+export const getDeltaOperationsForElements = (lastKnownElements: LastKnownOrderedElement[], newElements: readonly NonDeletedExcalidrawElement[], bulkify = true): {operations: Operation[], lastKnownElements: LastKnownOrderedElement[]} => {
   // Final operations are always in this order -> All updates + All appends + All deletes + All moves
   const updateOperations: UpdateOperation[] = []
   const appendOperations: AppendOperation[] = []
@@ -166,8 +167,34 @@ export const getDeltaOperationsForYjs = (lastKnownElements: LastKnownOrderedElem
   return {operations, lastKnownElements: updatedLastKnownElements};
 }
 
+export type AssetAppendOperation = { type: 'append', id: string, asset:BinaryFileData }
+export type AssetDeleteOperation = { type: 'delete', id: string }
+export type AssetOperation = AssetAppendOperation | AssetDeleteOperation
 
-export const applyOperations = (yArray: Y.Array<Y.Map<any>>, operations: Operation[]) => {
+export const getDeltaOperationsForAssets = (lastKnownFileIds: Set<string>, files: BinaryFiles): {operations: AssetOperation[], lastKnownFileIds: Set<string>} => {
+  const operations: AssetOperation[] = []
+
+  const newFields: Set<string> = new Set()
+  for (let fileId in files) {
+    if (!files.hasOwnProperty(fileId)) {
+      continue
+    }
+    newFields.add(fileId)
+    if (!lastKnownFileIds.has(fileId)) {
+      operations.push({type: "append", id: fileId, asset: files[fileId]})    
+    }
+  }
+
+  for (let fileId in lastKnownFileIds) {
+    if (!files.hasOwnProperty(fileId)) {
+      operations.push({type: "delete", id: fileId})
+    }
+  }
+
+  return {operations, lastKnownFileIds: newFields}
+}
+
+export const applyElementOperations = (yElements: Y.Array<Y.Map<any>>, operations: Operation[], undoManager: Y.UndoManager) => {
   // NOTE: yArray doesn't support a move operation (that is reordering elements within an array).
   // So to re-order the only way is to delete the element and insert it at the desired location
   // But that can lead to duplocation in some cases (when 1 person updates the same element and other reorders it)
@@ -179,34 +206,35 @@ export const applyOperations = (yArray: Y.Array<Y.Map<any>>, operations: Operati
   // Also we could have used yMap at top level rather than yArray
   // But yMaps at top level are not very efficient (memory wise). See this comment for more info -> https://discuss.yjs.dev/t/moving-elements-in-lists/92/23
 
-  const _updateYjsIndexMap = () => {
-    for (let i=0; i<yArray.length; i++) {
-      let item = yArray.get(i).get("el") as ExcalidrawElement
-      idYjsIndexMap[item.id] = i
+  yElements.doc!.transact(tr => {
+    const _updateYjsIndexMap = () => {
+      for (let i=0; i<yElements.length; i++) {
+        let item = yElements.get(i).get("el") as ExcalidrawElement
+        idYjsIndexMap[item.id] = i
+      }
     }
-  }
-  const idYjsIndexMap: {[key: string]: number} = {}
-  _updateYjsIndexMap()
+  
+    const idYjsIndexMap: {[key: string]: number} = {}
+    _updateYjsIndexMap()
 
-  yArray.doc!.transact(tr => {
+    // Apply element operations
     for (let op of operations) {
       switch (op.type) {
         case "update": {
-          yArray.get(idYjsIndexMap[op.id]).set("el", op.element)
+          yElements.get(idYjsIndexMap[op.id]).set("el", op.element)
           break
         }
         case "append":
         case "bulkAppend": {
           if (op.type === "append") {
-            idYjsIndexMap[op.id] = yArray.length;
-            yArray.push([new Y.Map<ExcalidrawElement | string>(Object.entries({ pos: op.pos, el: op.element }))])
-            
+            idYjsIndexMap[op.id] = yElements.length;
+            yElements.push([new Y.Map<ExcalidrawElement | string>(Object.entries({ pos: op.pos, el: op.element }))])
           }
           else {
             for (let i=0; i<op.data.length; i++) {
-              idYjsIndexMap[op.data[i].id] = yArray.length + i;
+              idYjsIndexMap[op.data[i].id] = yElements.length + i;
             }
-            yArray.push(
+            yElements.push(
               op.data.map((x) => new Y.Map<any>(Object.entries({ pos: x.pos, el: x.element })))
             )
           }
@@ -215,19 +243,36 @@ export const applyOperations = (yArray: Y.Array<Y.Map<any>>, operations: Operati
         case "delete":
         case "bulkDelete": {
           if (op.type === "delete") {
-            yArray.delete(idYjsIndexMap[op.id], 1)
+            yElements.delete(idYjsIndexMap[op.id], 1)
           }
           else {
-            yArray.delete(idYjsIndexMap[op.id], op.data.length)
+            yElements.delete(idYjsIndexMap[op.id], op.data.length)
           }
           _updateYjsIndexMap()
           break
         }
         case "move": {
-          yArray.get(idYjsIndexMap[op.id]).set("pos", op.pos)
+          yElements.get(idYjsIndexMap[op.id]).set("pos", op.pos)
           break
         }
       }
     }
-  }, this)
+  }, "track")
+}
+
+export const applyAssetOperations = (yAssets: Y.Map<any>, operations: AssetOperation[]) => {
+  yAssets.doc!.transact(tr => {
+    for (let op of operations) {
+      switch (op.type) {
+        case "append": {
+          yAssets.set(op.id, op.asset)
+          break
+        }
+        case "delete": {
+          yAssets.delete(op.id)
+          break
+        }
+      }
+    }
+  })
 }

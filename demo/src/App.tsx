@@ -4,7 +4,7 @@ import { Excalidraw } from "@excalidraw/excalidraw";
 import * as Y from "yjs";
 
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types/types";
-import { ExcalidrawBinding, ExcalidrawAssetsBinding } from "../../src"
+import { ExcalidrawBinding } from "../../src"
 
 import { WebrtcProvider } from 'y-webrtc'
 
@@ -25,6 +25,9 @@ export const usercolors = [
 export const userColor = usercolors[random.uint32() % usercolors.length]
 
 const ydoc = new Y.Doc()
+const yElements = ydoc.getArray('elements');
+const yAssets = ydoc.getMap('assets');
+
 const provider = new WebrtcProvider('y-excalidraw-demo-room', ydoc, { signaling: [SIGNALLING_SERVER] })
 
 provider.awareness.setLocalStateField('user', {
@@ -36,34 +39,39 @@ provider.awareness.setLocalStateField('user', {
 export default function App() {
   const [api, setApi] = React.useState<ExcalidrawImperativeAPI | null>(null);
   const [binding, setBindings] = React.useState<ExcalidrawBinding | null>(null);
+  const excalidrawRef = React.useRef(null);
 
   React.useEffect(() => {
     if (!api) return;
-
+    
     const binding = new ExcalidrawBinding(
-      ydoc.getArray("excalidraw"),
+      yElements as any,
+      yAssets,
+      excalidrawRef.current,
       api,
       provider.awareness,
     );
     setBindings(binding);
-    const assetBinding = new ExcalidrawAssetsBinding(
-      ydoc.getMap("assets"),
-      api,
-    );
+ 
     return () => {
       setBindings(null);
       binding.destroy();
-      assetBinding.destroy();
     };
   }, [api]);
 
   return (
     <div style={{ height: "100vh" }}>
-      <Excalidraw
-        excalidrawAPI={setApi}
-        onPointerUpdate={binding?.onPointerUpdate}
-        theme="light"
-      />
+      <div style={{height: "150px", backgroundColor: "green"}}>
+        <div style={{ height: "50%" }}>Hello</div>
+        <div style={{ height: "50%" }}>Hi</div>
+      </div>
+      <div style={{height: 'calc(100vh - 150px)'}} ref={excalidrawRef}>
+        <Excalidraw
+          excalidrawAPI={setApi}
+          onPointerUpdate={binding?.onPointerUpdate}
+          theme="light"
+        />
+      </div>
     </div>
   );
 }
