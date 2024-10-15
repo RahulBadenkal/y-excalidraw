@@ -20,7 +20,7 @@ export class ExcalidrawBinding {
   subscriptions: (() => void)[] = [];
   collaborators: Map<string, Collaborator> = new Map();
   lastKnownElements: LastKnownOrderedElement[] = []
-  lastKnownFileIds: Set<string>
+  lastKnownFileIds: Set<string> = new Set();
 
   constructor(yElements: Y.Array<Y.Map<any>>, yAssets: Y.Map<any>, excalidrawDom: HTMLElement, api: ExcalidrawImperativeAPI, awareness?: awarenessProtocol.Awareness, undoManager?: Y.UndoManager) {
     this.yElements = yElements;
