@@ -163,7 +163,6 @@ export const getDeltaOperationsForElements = (lastKnownElements: LastKnownOrdere
     return rest
   })
   
-  // console.log("operations", operations)
   return {operations, lastKnownElements: updatedLastKnownElements};
 }
 
@@ -218,24 +217,25 @@ export const applyElementOperations = (yElements: Y.Array<Y.Map<any>>, operation
     _updateYjsIndexMap()
 
     // Apply element operations
+    // while adding/updating element, using spread operator and not directly assigning it as when later excalidraw updates the elements, it was affecting the undo-redo feature as it was still refering to the the same object
     for (let op of operations) {
       switch (op.type) {
         case "update": {
-          yElements.get(idYjsIndexMap[op.id]).set("el", op.element)
+          yElements.get(idYjsIndexMap[op.id]).set("el", {...op.element})
           break
         }
         case "append":
         case "bulkAppend": {
           if (op.type === "append") {
             idYjsIndexMap[op.id] = yElements.length;
-            yElements.push([new Y.Map<ExcalidrawElement | string>(Object.entries({ pos: op.pos, el: op.element }))])
+            yElements.push([new Y.Map<ExcalidrawElement | string>(Object.entries({ pos: op.pos, el: {...op.element } }))])
           }
           else {
             for (let i=0; i<op.data.length; i++) {
               idYjsIndexMap[op.data[i].id] = yElements.length + i;
             }
             yElements.push(
-              op.data.map((x) => new Y.Map<any>(Object.entries({ pos: x.pos, el: x.element })))
+              op.data.map((x) => new Y.Map<any>(Object.entries({ pos: x.pos, el: {...x.element} })))
             )
           }
           break
@@ -258,8 +258,6 @@ export const applyElementOperations = (yElements: Y.Array<Y.Map<any>>, operation
       }
     }
   })
-
-  console.log('operations', JSON.parse(JSON.stringify(operations)), 'yElements', JSON.parse(JSON.stringify(yjsToExcalidraw(yElements))))
 }
 
 export const applyAssetOperations = (yAssets: Y.Map<any>, operations: AssetOperation[]) => {

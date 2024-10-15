@@ -26,7 +26,8 @@ export class ExcalidrawBinding {
     this.yAssets = yAssets;
     this.api = api;
     this.awareness = awareness;
-    this.undoManager = new Y.UndoManager(this.yElements, {captureTimeout: 0})
+    this.undoManager = new Y.UndoManager(this.yElements)
+    this.subscriptions.push(() => this.undoManager.destroy())
 
     // Listener for changes made on excalidraw by current user
     this.subscriptions.push(
@@ -58,38 +59,18 @@ export class ExcalidrawBinding {
             state.selectedElementIds,
           );
         }
-
-        // if (operations.length > 0 || assetOperations.length > 0) {
-        //   console.log("elements", elements, "files", files)
-        // }
       }),
     );
-
-    const _undo = () => {
-      this.undoManager.undo()
-      // debugger
-      // const elements = yjsToExcalidraw(this.yElements)
-      // this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
-      // this.api.updateScene({ elements })
-      // console.log(this.lastKnownElements)
-    }
-
-    const _redo = () => {
-      this.undoManager.redo()
-      // const elements = yjsToExcalidraw(this.yElements)
-      // this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
-      // this.api.updateScene({ elements })
-    }
 
     // listen for undo/redo keys
     const _keyPressHandler = (event) => {
       if (event.ctrlKey && event.shiftKey && event.key?.toLocaleLowerCase() === 'z') {
         event.stopPropagation();
-        _redo()
+        this.undoManager.redo()
       }
       else if (event.ctrlKey && event.key?.toLocaleLowerCase() === 'z') {
         event.stopPropagation();
-        _undo()
+        this.undoManager.undo()
       }
     }
     excalidrawDom.addEventListener('keydown', _keyPressHandler, { capture: true });
@@ -99,7 +80,7 @@ export class ExcalidrawBinding {
     // hijack the undo/redo buttons on the canvas
     const _undoBtnHandler = (event) => {
       event.stopImmediatePropagation();
-      _undo()
+      this.undoManager.undo()
     }
     const undoButton = excalidrawDom.querySelector('[aria-label="Undo"]');
     undoButton.addEventListener('click', _undoBtnHandler);
@@ -107,26 +88,19 @@ export class ExcalidrawBinding {
 
     const _redoBtnHandler = (event) => {
       event.stopImmediatePropagation();
-      _redo()
+      this.undoManager.redo()
     }
     const redoButton = excalidrawDom.querySelector('[aria-label="Redo"]');
     redoButton.addEventListener('click', _redoBtnHandler);
     this.subscriptions.push(() => redoButton?.removeEventListener('click', _redoBtnHandler))
 
-    this.undoManager.on('stack-item-added', ({ stackItem, changedParentTypes }) => {
-      // debugger
-    })
-
     // Listener for changes made on yElements by remote users
     const _remoteElementsChangeHandler = (event: Array<Y.YEvent<any>>, txn: Y.Transaction) => {
-      // debugger
       if (txn.origin !== this.undoManager && txn.local) {
+        // Only update whiteboard when changes come from remote or undomanager
         return
       }
 
-      console.log("Remote update", event, (event as any)[0].changes.delta)
-      console.log(JSON.parse(JSON.stringify(yjsToExcalidraw(this.yElements))))
-      // console.log('remote changes')
       // elements changed outside this component, reflect the change in excalidraw ui
       const elements = yjsToExcalidraw(this.yElements)
       this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
@@ -137,7 +111,7 @@ export class ExcalidrawBinding {
 
     // Listener for changes made on yAssets by remote users
     const _remoteFilesChangeHandler = (events: Y.YMapEvent<any>, txn: Y.Transaction) => {
-      if (txn.origin !== this.undoManager && txn.local) {
+      if (txn.local) {
         return
       }
 
