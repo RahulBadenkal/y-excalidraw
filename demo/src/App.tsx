@@ -27,6 +27,7 @@ export const userColor = usercolors[random.uint32() % usercolors.length]
 const ydoc = new Y.Doc()
 const yElements = ydoc.getArray<Y.Map<any>>('elements');
 const yAssets = ydoc.getMap('assets');
+const undoManager =  new Y.UndoManager(yElements);
 
 const provider = new WebrtcProvider('y-excalidraw-demo-room', ydoc, { signaling: [SIGNALLING_SERVER] })
 
@@ -41,6 +42,22 @@ export default function App() {
   const [binding, setBindings] = React.useState<ExcalidrawBinding | null>(null);
   const excalidrawRef = React.useRef(null);
 
+  const [plainElements, setPlainElements] = React.useState<any>([])
+
+  ydoc.on("update", () => {
+    setPlainElements(yjsToExcalidraw(yElements))
+  })
+
+  const handleUndo = () => {
+    const x = undoManager.undo()
+    console.log(x)
+  } 
+
+  const handleRedo = () => {
+    const y = undoManager.redo()
+    console.log(y)
+  }
+
   React.useEffect(() => {
     if (!api) return;
 
@@ -50,7 +67,7 @@ export default function App() {
       excalidrawRef.current,  // excalidraw dom is needed to override the undo/redo buttons in the UI as there is no way to pass it via props in excalidraw
       api,
       provider.awareness,
-      new Y.UndoManager(yElements),
+      undoManager
     );
     setBindings(binding);
 
@@ -64,14 +81,28 @@ export default function App() {
     elements: yjsToExcalidraw(yElements)
   }
   return (
-    <div style={{width: "100vw", height: "100vh"}} ref={excalidrawRef}>
-      <Excalidraw
-        initialData={initData}
-        excalidrawAPI={setApi}
-        onPointerUpdate={(payload) => binding && binding.onPointerUpdate(payload)}
-        theme="light"
-      />
+    <div style={{width: "100vw", height: "100vh"}}>
+      <div>
+        <button onClick={handleUndo}>
+          Undo
+        </button>
+        <button onClick={handleRedo}>
+          Redo
+        </button>
+      </div>
+      <div style={{height: "300px", background: "green", overflow: "auto"}}>
+        <pre>{JSON.stringify(plainElements, null, 2)}</pre>
+      </div>
+      <div style={{width: "100vw", height: "calc(100vh - 300px)"}} ref={excalidrawRef}>
+        <Excalidraw
+          initialData={initData}
+          excalidrawAPI={setApi}
+          onPointerUpdate={(payload) => binding && binding.onPointerUpdate(payload)}
+          theme="light"
+        />
+      </div>
     </div>
+    
   );
 }
 
