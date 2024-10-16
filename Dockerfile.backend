@@ -4,14 +4,11 @@ FROM node:alpine
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy package.json
-COPY package.json .
+# Copy source code
+COPY . .
 
 # Install app dependencies
 RUN npm install
-
-# Copy source code
-COPY . .
 
 # Expose the port the app runs on
 EXPOSE 3000
