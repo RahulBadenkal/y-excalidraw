@@ -64,7 +64,7 @@ export const usercolors = [
 export const userColor = usercolors[random.uint32() % usercolors.length]
 
 const ydoc = new Y.Doc()
-const yElements = ydoc.getArray<Y.Map<any>>('elements');
+const yElements = ydoc.getArray<Y.Map<any>>('elements');  // structure = {el: NonDeletedExcalidrawElement, pos: string}
 const yAssets = ydoc.getMap('assets');
 
 const provider = new WebrtcProvider('y-excalidraw-demo-room', ydoc)
