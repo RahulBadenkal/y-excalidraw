@@ -4,43 +4,104 @@ import * as Y from 'yjs';
 // Create the Y.Doc instance and Y.Array of Y.Map elements
 const ydoc = new Y.Doc();
 const yElements = ydoc.getArray<Y.Map<any>>('elements');
-const undoManager = new Y.UndoManager(yElements)
+const undoManager = new Y.UndoManager(yElements, {captureTimeout: 0})
+
+const clone = (data) => JSON.parse(JSON.stringify(data))
 
 const setInitiaData = () => {
   ydoc.transact(() => {
     const newItem = new Y.Map();
-    newItem.set('id', (yElements.length + 1).toString());
-    newItem.set('name', `Item ${yElements.length + 1}`);
-    yElements.push([newItem]);
+    newItem.set("el", {
+      "type": "rectangle",
+      "version": 24,
+      "versionNonce": 930018096,
+      "isDeleted": false,
+      "id": "Ili1OSd0gXLbqz9I-skEI",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "x": 743.7999877929688,
+      "y": 63.40003204345703,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "#ffc9c9",
+      "width": 176,
+      "height": 195.99998474121094,
+      "seed": 827052496,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": {
+          "type": 3
+      },
+      "boundElements": [],
+      "updated": 1729049350289,
+      "link": null,
+      "locked": false
+  })
+  newItem.set("pos", "a0")
+  yElements.push([newItem])
 
-    const newItem2 = new Y.Map();
-    newItem2.set('id', (yElements.length + 1).toString());
-    newItem2.set('name', `Item ${yElements.length + 1}`);
-    yElements.push([newItem2]);
+  const newItem2 = new Y.Map();
+  newItem2.set("el", {
+      "type": "rectangle",
+      "version": 48,
+      "versionNonce": 2106133808,
+      "isDeleted": false,
+      "id": "7b5Rv-1t6VS5O8G9AcWLE",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "x": 866.2000122070312,
+      "y": 179.40003204345703,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "#b2f2bb",
+      "width": 168,
+      "height": 160.79991149902344,
+      "seed": 1905334224,
+      "groupIds": [],
+      "frameId": null,
+      "roundness": {
+          "type": 3
+      },
+      "boundElements": [],
+      "updated": 1729049350290,
+      "link": null,
+      "locked": false
+  })
+  newItem2.set("pos", "b0")
+  yElements.push([newItem2])
   })
 }
 setInitiaData()
+console.log('initial', clone(yElements.toJSON()))
 
 const App: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
   const [index, setIndex] = useState<number>(0); // To store the index from input
 
+  const updateFromYjs = () => {
+    // Convert each Y.Map to a plain object for rendering
+    const plainItems = yElements.map((item: Y.Map<any>) => ({
+      pos: item.get("pos"),
+      el: item.get("el")
+    }));
+    // setItems(plainItems.sort((a, b) => a.pos < b.pos ? - 1 : (a.pos === b.pos ? 0 : 1)));
+    setItems(plainItems);
+  };
+
+
   // Sync the Yjs array with React state when the component mounts
   useEffect(() => {
-    const updateFromYjs = () => {
-      // Convert each Y.Map to a plain object for rendering
-      const plainItems = yElements.map((item: Y.Map<any>) => ({
-        id: item.get('id'),
-        name: item.get('name')
-      }));
-      setItems(plainItems);
-    };
-
     // Listen to changes in the Yjs array
     yElements.observeDeep(updateFromYjs);
 
-    // Initialize the items state with the current Yjs array values
-    updateFromYjs();
+    // // Initialize the items state with the current Yjs array values
+    // updateFromYjs();
 
     // Cleanup the observer on unmount
     return () => {
@@ -81,21 +142,36 @@ const App: React.FC = () => {
     })
   };
 
+
+  // Delete the item at the specified index in the Yjs array
+  const moveItem = () => {
+    ydoc.transact(() => {
+      const el = yElements.get(1).get("el")
+      yElements.get(1).set("pos", "Z1")
+      yElements.get(1).set("el", {...el, version: el.version + 1})
+    })
+    console.log('move', clone(yElements.toJSON()))
+  };
+
   // Undo and Redo logic (placeholder)
   const undo = () => {
     console.log("Undo clicked");
     undoManager.undo()
+    console.log('undo', clone(yElements.toJSON()))
   };
 
   const redo = () => {
     console.log("Redo clicked");
     undoManager.redo()
+    console.log('redo', clone(yElements.toJSON()))
   };
 
   // set init data
   
 
   useEffect(() => {
+    updateFromYjs()
+
     // Placeholder for setting up undo/redo listeners
     const setupUndoRedoListeners = () => {
       // Setup listeners (if needed)
@@ -130,6 +206,7 @@ const App: React.FC = () => {
         <button onClick={addItem} style={{ marginRight: '10px' }}>Add</button>
         <button onClick={updateItem} style={{ marginRight: '10px' }}>Update</button>
         <button onClick={deleteItem} style={{ marginRight: '10px' }}>Delete</button>
+        <button onClick={moveItem} style={{ marginRight: '10px' }}>Move</button>
         <button onClick={undo} style={{ marginRight: '10px' }}>Undo</button>
         <button onClick={redo}>Redo</button>
       </div>

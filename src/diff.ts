@@ -258,7 +258,7 @@ export const applyElementOperations = (yElements: Y.Array<Y.Map<any>>, operation
         }
       }
     }
-  }, instance)
+  }, "test")
 }
 
 export const applyAssetOperations = (yAssets: Y.Map<any>, operations: AssetOperation[], instance: ExcalidrawBinding) => {
@@ -275,5 +275,5 @@ export const applyAssetOperations = (yAssets: Y.Map<any>, operations: AssetOpera
         }
       }
     }
-  }, instance)
+  }, "test")
 }

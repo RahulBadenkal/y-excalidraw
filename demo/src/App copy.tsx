@@ -11,6 +11,8 @@ import { WebrtcProvider } from 'y-webrtc'
 import * as random from 'lib0/random'
 import { SIGNALLING_SERVER } from "./constants";
 
+import equal from "fast-deep-equal/es6"
+
 export const usercolors = [
   { color: '#30bced', light: '#30bced33' },
   { color: '#6eeb83', light: '#6eeb8333' },
@@ -37,6 +39,9 @@ provider.awareness.setLocalStateField('user', {
   colorLight: userColor.light
 })
 
+const clone = (data) => JSON.parse(JSON.stringify(data))
+
+let lastKnown = []
 export default function App() {
   const [api, setApi] = React.useState<ExcalidrawImperativeAPI | null>(null);
   const [binding, setBindings] = React.useState<ExcalidrawBinding | null>(null);
@@ -45,23 +50,42 @@ export default function App() {
   const [plainElements, setPlainElements] = React.useState<any>([])
 
   ydoc.on("update", () => {
-    setPlainElements(yjsToExcalidraw(yElements))
-  })
+    const latest = yElements.toJSON();
+    if (equal(lastKnown, latest)) {
+      return
+    }
+    lastKnown = latest
+    setPlainElements(latest)
+    console.log('elements', latest)
+  });
+  
+  const initialize = () => {
+    console.log("initialize")
+    binding.initialize()
+  }
 
-  const handleUndo = () => {
-    const x = undoManager.undo()
-    console.log(x)
+  const doAction = () => {
+    console.log("doAction")
+    binding.doAction()
+  }
+
+  const undo = () => {
+    console.log("undo")
+    undoManager.undo()
   } 
 
-  const handleRedo = () => {
-    const y = undoManager.redo()
-    console.log(y)
+  const redo = () => {
+    console.log("redo")
+    undoManager.redo()
   }
 
   React.useEffect(() => {
     if (!api) return;
 
-    const binding = new ExcalidrawBinding(
+    if (binding) {
+      binding.destroy()
+    }
+    const x = new ExcalidrawBinding(
       yElements,
       yAssets,
       excalidrawRef.current,  // excalidraw dom is needed to override the undo/redo buttons in the UI as there is no way to pass it via props in excalidraw
@@ -69,30 +93,35 @@ export default function App() {
       provider.awareness,
       undoManager
     );
-    setBindings(binding);
-
-    return () => {
-      setBindings(null);
-      binding.destroy();
-    };
-  }, [api]);
-
+    setBindings(x);
+  }, [api])
+  
+  
   const initData = {
     elements: yjsToExcalidraw(yElements)
   }
   return (
     <div style={{width: "100vw", height: "100vh"}}>
-      <div>
-        <button onClick={handleUndo}>
+      <div style={{ height: "300px", overflowY: "auto"}}>
+        <div>
+        <button onClick={initialize}>
+          Initialize
+        </button>
+        <button onClick={doAction}>
+          Do action
+        </button>
+        <button onClick={undo}>
           Undo
         </button>
-        <button onClick={handleRedo}>
+        <button onClick={redo}>
           Redo
         </button>
-      </div>
-      <div style={{height: "300px", background: "green", overflow: "auto"}}>
+        </div>
+        <div style={{background: "green", overflow: "auto"}}>
         <pre>{JSON.stringify(plainElements, null, 2)}</pre>
       </div>
+      </div>
+      
       <div style={{width: "100vw", height: "calc(100vh - 300px)"}} ref={excalidrawRef}>
         <Excalidraw
           initialData={initData}

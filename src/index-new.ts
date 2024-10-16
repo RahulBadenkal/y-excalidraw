@@ -35,6 +35,7 @@ export class ExcalidrawBinding {
       this.api.onChange((_, state, files) => {
         // TODO: Excalidraw doesn't delete the asset from the map when the associated item is deleted.
         const elements = this.api.getSceneElements()  // This returns without deleted elements
+
         // This fires very often even when data is not changed, so keeping a fast procedure to check if anything changed or not
         // Even on move operations, the version property changes so this should work
         let operations: Operation[] = []
@@ -43,7 +44,6 @@ export class ExcalidrawBinding {
           operations = res.operations
           this.lastKnownElements = res.lastKnownElements
           applyElementOperations(this.yElements, operations, this)
-          console.log("From excalidraw", 'yElements:', this.yElements.toJSON(), 'operations:', operations, 'lastKnownElements:', this.lastKnownElements, 'elements:', elements)
         }
 
         const res = getDeltaOperationsForAssets(this.lastKnownFileIds, files)
@@ -65,23 +65,14 @@ export class ExcalidrawBinding {
 
     // Listener for changes made on yElements by remote users
     const _remoteElementsChangeHandler = (event: Array<Y.YEvent<any>>, txn: Y.Transaction) => {
-      if (txn.origin === "test") {
+      if (txn.origin === this) {
         return
       }
 
-      console.log('remote origin:', txn.origin)
-
       // elements changed outside this component, reflect the change in excalidraw ui
       const elements = yjsToExcalidraw(this.yElements)
-      this.lastKnownElements = this.yElements.toArray()
-        .map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
-        .sort((a, b) => {
-          const key1 = a.pos;
-          const key2 = b.pos;
-          return key1 > key2 ? 1 : (key1 < key2 ? -1 : 0)
-        })
+      this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
       this.api.updateScene({ elements })
-      console.log('After undo manager: ', 'lastKnownElements:', this.lastKnownElements, 'yElements:', this.yElements.toJSON(), 'elements:', elements)
     }
     this.yElements.observeDeep(_remoteElementsChangeHandler)
     this.subscriptions.push(() => this.yElements.unobserveDeep(_remoteElementsChangeHandler))
@@ -152,13 +143,7 @@ export class ExcalidrawBinding {
 
     // init code
     const initialValue = yjsToExcalidraw(this.yElements)
-    this.lastKnownElements = this.yElements.toArray()
-        .map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
-        .sort((a, b) => {
-          const key1 = a.pos;
-          const key2 = b.pos;
-          return key1 > key2 ? 1 : (key1 < key2 ? -1 : 0)
-        })
+    this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
     this.api.updateScene({ elements: initialValue });
     this.api.addFiles(
       [...this.yAssets.keys()].map((key) => this.yAssets.get(key) as BinaryFileData),
@@ -213,6 +198,39 @@ export class ExcalidrawBinding {
     const redoButton = excalidrawDom.querySelector('[aria-label="Redo"]');
     redoButton.addEventListener('click', _redoBtnHandler);
     this.subscriptions.push(() => redoButton?.removeEventListener('click', _redoBtnHandler))
+  }
+
+  initialize() {
+    const init = [
+      {pos: "a1", el: {"type":"rectangle","version":22,"versionNonce":1891494587,"index":"b0e","isDeleted":false,"id":"40nIV9Ei2YbJTIjdXr7IK","fillStyle":"solid","strokeWidth":2,"strokeStyle":"solid","roughness":1,"opacity":100,"angle":0,"x":431.5109515570748,"y":-256.98887127143007,"strokeColor":"#1e1e1e","backgroundColor":"#ffc9c9","width":176,"height":195.99998474121094,"seed":458711771,"groupIds":[],"frameId":null,"roundness":{"type":3},"boundElements":[],"updated":1729037250974,"link":null,"locked":false}},
+      {pos: "b1", el: {"type":"rectangle","version":46,"versionNonce":1345018837,"index":"b0f","isDeleted":false,"id":"ziHLKND6sKP-rBgN0yroE","fillStyle":"solid","strokeWidth":2,"strokeStyle":"solid","roughness":1,"opacity":100,"angle":0,"x":553.9109759711373,"y":-140.98887127143007,"strokeColor":"#1e1e1e","backgroundColor":"#b2f2bb","width":168,"height":160.79991149902344,"seed":1325009781,"groupIds":[],"frameId":null,"roundness":{"type":3},"boundElements":[],"updated":1729037252531,"link":null,"locked":false}}
+    ]
+    this.yElements.doc.transact(() => {
+      for (let i=0; i<init.length; i++) {
+        const item = init[i]
+        const x = new Y.Map()
+        x.set("pos", item.pos)
+        x.set("el", item.el)
+        this.yElements.push([x])
+      }
+    }, "test")
+  }
+
+  doAction() {
+    this.yElements.doc.transact(() => {
+      const item = this.yElements.get(1)
+      item.set("pos", "Zz")
+      const el = item.get("el")
+      item.set("el", {...el, version: el.version + 1})
+    }, "test")
+  }
+
+  undo() {
+    this.undoManager.undo()
+  }
+
+  redo() {
+    this.undoManager.redo()
   }
 
   destroy() {
