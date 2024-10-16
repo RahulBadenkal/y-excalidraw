@@ -88,7 +88,9 @@ export default function App() {
       yAssets,
       api,
       provider.awareness,
-      {excalidrawDom: excalidrawRef.current, undoManager: new Y.UndoManager(yElements)}, // excalidraw dom is needed to override the undo/redo buttons in the UI as there is no way to override it via props in excalidraw
+      // excalidraw dom is needed to override the undo/redo buttons in the UI as there is no way to override it via props in excalidraw
+      // You might need to pass {trackedOrigins: new Set()} to undomanager params depending on whether your provider sets an origin or not
+      {excalidrawDom: excalidrawRef.current, undoManager: new Y.UndoManager(yElements)},
    );
     setBindings(binding);
     return () => {
@@ -100,6 +102,7 @@ export default function App() {
   return (
     <div style={{width: "100vw", height: "100vh"}} ref={excalidrawRef}>
       <Excalidraw
+        initialData={initData}  // Need to set the initial data
         excalidrawAPI={setApi}
         onPointerUpdate={binding?.onPointerUpdate}
         theme="light"

@@ -25,7 +25,7 @@ export const usercolors = [
 export const userColor = usercolors[random.uint32() % usercolors.length]
 
 const ydoc = new Y.Doc()
-const yElements = ydoc.getArray<Y.Map<any>>('elements');
+const yElements = ydoc.getArray<Y.Map<any>>('elements');  // structure = {el: NonDeletedExcalidrawElement, pos: string}
 const yAssets = ydoc.getMap('assets');
 
 const provider = new WebrtcProvider('y-excalidraw-demo-room', ydoc, { signaling: [SIGNALLING_SERVER] })
@@ -49,7 +49,9 @@ export default function App() {
       yAssets,
       api,
       provider.awareness,
-      {excalidrawDom: excalidrawRef.current, undoManager: new Y.UndoManager(yElements)},  // You might need to pass {trackedOrigins: new Set()} depending on whether your provider sets an origin or not
+      // excalidraw dom is needed to override the undo/redo buttons in the UI as there is no way to override it via props in excalidraw
+      // You might need to pass {trackedOrigins: new Set()} to undomanager params depending on whether your provider sets an origin or not
+      {excalidrawDom: excalidrawRef.current, undoManager: new Y.UndoManager(yElements)},
     );
     setBindings(binding);
 
