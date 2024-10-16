@@ -77,7 +77,6 @@ export class ExcalidrawBinding {
           const key2 = b.pos;
           return key1 > key2 ? 1 : (key1 < key2 ? -1 : 0)
         })
-      console.log("Changes from undomanager", elements)
       this.api.updateScene({ elements })
     }
     this.yElements.observeDeep(_remoteElementsChangeHandler)
