@@ -49,7 +49,7 @@ export default function App() {
       yAssets,
       api,
       provider.awareness,
-      {excalidrawDom: excalidrawRef.current, undoManager: new Y.UndoManager(yElements)},
+      {excalidrawDom: excalidrawRef.current, undoManager: new Y.UndoManager(yElements)},  // You might need to pass {trackedOrigins: new Set()} depending on whether your provider sets an origin or not
     );
     setBindings(binding);
 
@@ -65,7 +65,7 @@ export default function App() {
   return (
     <div style={{width: "100vw", height: "100vh"}} ref={excalidrawRef}>
       <Excalidraw
-        initialData={initData}
+        initialData={initData}  // Need to set the initial data
         excalidrawAPI={setApi}
         onPointerUpdate={(payload) => binding && binding.onPointerUpdate(payload)}
         theme="light"
