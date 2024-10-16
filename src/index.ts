@@ -12,22 +12,22 @@ export { yjsToExcalidraw }
 export class ExcalidrawBinding {
   yElements: Y.Array<Y.Map<any>>
   yAssets: Y.Map<any>
-  dom: HTMLElement
   api: ExcalidrawImperativeAPI;
-  undoManager: Y.UndoManager
   awareness?: awarenessProtocol.Awareness;
+  undoManager?: Y.UndoManager;
 
   subscriptions: (() => void)[] = [];
   collaborators: Map<string, Collaborator> = new Map();
   lastKnownElements: LastKnownOrderedElement[] = []
   lastKnownFileIds: Set<string> = new Set();
 
-  constructor(yElements: Y.Array<Y.Map<any>>, yAssets: Y.Map<any>, excalidrawDom: HTMLElement, api: ExcalidrawImperativeAPI, awareness?: awarenessProtocol.Awareness, undoManager?: Y.UndoManager) {
+  constructor(yElements: Y.Array<Y.Map<any>>, yAssets: Y.Map<any>, api: ExcalidrawImperativeAPI, awareness?: awarenessProtocol.Awareness, undoConfig?: {excalidrawDom: HTMLElement, undoManager: Y.UndoManager}) {
     this.yElements = yElements;
     this.yAssets = yAssets;
     this.api = api;
     this.awareness = awareness;
-    this.undoManager = undoManager
+    const excalidrawDom = undoConfig?.excalidrawDom
+    this.undoManager = undoConfig?.undoManager
 
     // Listener for changes made on excalidraw by current user
     this.subscriptions.push(
