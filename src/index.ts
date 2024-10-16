@@ -28,7 +28,6 @@ export class ExcalidrawBinding {
     this.api = api;
     this.awareness = awareness;
     this.undoManager = undoManager
-    this.subscriptions.push(() => this.undoManager.destroy())
 
     // Listener for changes made on excalidraw by current user
     this.subscriptions.push(
@@ -71,7 +70,14 @@ export class ExcalidrawBinding {
 
       // elements changed outside this component, reflect the change in excalidraw ui
       const elements = yjsToExcalidraw(this.yElements)
-      this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
+      this.lastKnownElements = this.yElements.toArray()
+        .map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
+        .sort((a, b) => {
+          const key1 = a.pos;
+          const key2 = b.pos;
+          return key1 > key2 ? 1 : (key1 < key2 ? -1 : 0)
+        })
+      console.log("Changes from undomanager", elements)
       this.api.updateScene({ elements })
     }
     this.yElements.observeDeep(_remoteElementsChangeHandler)
@@ -143,7 +149,13 @@ export class ExcalidrawBinding {
 
     // init code
     const initialValue = yjsToExcalidraw(this.yElements)
-    this.lastKnownElements = this.yElements.toArray().map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
+    this.lastKnownElements = this.yElements.toArray()
+      .map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
+      .sort((a, b) => {
+        const key1 = a.pos;
+        const key2 = b.pos;
+        return key1 > key2 ? 1 : (key1 < key2 ? -1 : 0)
+      })    
     this.api.updateScene({ elements: initialValue });
     this.api.addFiles(
       [...this.yAssets.keys()].map((key) => this.yAssets.get(key) as BinaryFileData),
