@@ -146,7 +146,7 @@ export class ExcalidrawBinding {
       this.setupUndoRedo(excalidrawDom)
     }
 
-    // init code
+    // init elements
     const initialValue = yjsToExcalidraw(this.yElements)
     this.lastKnownElements = this.yElements.toArray()
       .map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
@@ -156,9 +156,28 @@ export class ExcalidrawBinding {
         return key1 > key2 ? 1 : (key1 < key2 ? -1 : 0)
       })    
     this.api.updateScene({ elements: initialValue });
+
+    // init assets
     this.api.addFiles(
       [...this.yAssets.keys()].map((key) => this.yAssets.get(key) as BinaryFileData),
     );
+
+    // init collaborators
+    const collaborators = new Map()
+    for (let id of this.awareness.getStates().keys()) {
+      const state = this.awareness.getStates().get(id)
+      collaborators.set(id.toString(), {
+        pointer: state.pointer,
+        button: state.button,
+        selectedElementIds: state.selectedElementIds,
+        username: state.user?.name,
+        color: state.user?.color,
+        avatarUrl: state.user?.avatarUrl,
+        userState: state.user?.state,
+      });
+    }
+    this.api.updateScene({ collaborators });
+    this.collaborators = collaborators;
   }
 
   public onPointerUpdate = (payload: {

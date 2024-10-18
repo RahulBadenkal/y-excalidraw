@@ -194,7 +194,7 @@ export const getDeltaOperationsForAssets = (lastKnownFileIds: Set<string>, files
   return {operations, lastKnownFileIds: newFields}
 }
 
-export const applyElementOperations = (yElements: Y.Array<Y.Map<any>>, operations: Operation[], instance: ExcalidrawBinding) => {
+export const applyElementOperations = (yElements: Y.Array<Y.Map<any>>, operations: Operation[], origin: ExcalidrawBinding) => {
   // NOTE: yArray doesn't support a move operation (that is reordering elements within an array).
   // So to re-order the only way is to delete the element and insert it at the desired location
   // But that can lead to duplocation in some cases (when 1 person updates the same element and other reorders it)
@@ -258,10 +258,10 @@ export const applyElementOperations = (yElements: Y.Array<Y.Map<any>>, operation
         }
       }
     }
-  }, instance)
+  }, origin)
 }
 
-export const applyAssetOperations = (yAssets: Y.Map<any>, operations: AssetOperation[], instance: ExcalidrawBinding) => {
+export const applyAssetOperations = (yAssets: Y.Map<any>, operations: AssetOperation[], origin?: ExcalidrawBinding) => {
   yAssets.doc!.transact(tr => {
     for (let op of operations) {
       switch (op.type) {
@@ -275,5 +275,5 @@ export const applyAssetOperations = (yAssets: Y.Map<any>, operations: AssetOpera
         }
       }
     }
-  }, instance)
+  }, origin)
 }
