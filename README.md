@@ -118,7 +118,7 @@ export default function App() {
 
 If you want to get the excalidraw array, you can use the utility function
 ```typescript
-import { yjsToExcalidraw } from "y-excalidraw/helpers"
+import { yjsToExcalidraw } from "y-excalidraw"
 
 console.log("Excalidraw json", yjsToExcalidraw(yElements))
 ```
