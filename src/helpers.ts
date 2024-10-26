@@ -10,6 +10,17 @@ export const moveArrayItem = <T>(arr: T[], from: number, to: number, inPlace = t
   return arr
 };
 
+// https://stackoverflow.com/a/75988895
+export const debounce = (callback: any, wait: number) => {
+  let timeoutId = null;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      callback(...args);
+    }, wait);
+  };
+}
+
 export const areElementsSame = (els1: readonly {id: string, version: number}[], els2: readonly {id: string, version: number}[]) => {
   if (els1.length !== els2.length) {
     return false

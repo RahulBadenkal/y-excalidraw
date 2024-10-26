@@ -5,7 +5,7 @@ import type {
 } from "@excalidraw/excalidraw/types/types";
 import type * as awarenessProtocol from "y-protocols/awareness";
 import * as Y from "yjs"
-import { areElementsSame, yjsToExcalidraw } from "./helpers";
+import { areElementsSame, debounce, yjsToExcalidraw } from "./helpers";
 import { applyAssetOperations, applyElementOperations, getDeltaOperationsForAssets, getDeltaOperationsForElements, LastKnownOrderedElement, Operation } from "./diff";
 export { yjsToExcalidraw }
 
@@ -212,22 +212,43 @@ export class ExcalidrawBinding {
     excalidrawDom.addEventListener('keydown', _keyPressHandler, { capture: true });
     this.subscriptions.push(() => excalidrawDom?.removeEventListener('keydown', _keyPressHandler, { capture: true }))
 
-    // hijack the undo/redo buttons on the canvas
+    // hijack the undo/redo buttons
+    // these get destroyed/recreated when view changes from desktop->mobile, so the listeners need to be added again
+    let undoButton: HTMLButtonElement | null;
+    let redoButton: HTMLButtonElement | null;
+
     const _undoBtnHandler = (event) => {
       event.stopImmediatePropagation();
       this.undoManager.undo()
     }
-    const undoButton = excalidrawDom.querySelector('[aria-label="Undo"]');
-    undoButton.addEventListener('click', _undoBtnHandler);
-    this.subscriptions.push(() => undoButton?.removeEventListener('click', _undoBtnHandler))
-
     const _redoBtnHandler = (event) => {
       event.stopImmediatePropagation();
       this.undoManager.redo()
     }
-    const redoButton = excalidrawDom.querySelector('[aria-label="Redo"]');
-    redoButton.addEventListener('click', _redoBtnHandler);
+
+    const _resizeListener = () => {
+      if (!undoButton || !undoButton.isConnected) {
+        undoButton?.removeEventListener('click', _undoBtnHandler)
+        undoButton = excalidrawDom.querySelector('[aria-label="Undo"]');  // Assuming new undoButton is added to dom by now?
+        undoButton.addEventListener('click', _undoBtnHandler);
+      }
+
+      if (!redoButton || !redoButton.isConnected) {
+        redoButton?.removeEventListener('click', _undoBtnHandler)
+        redoButton = excalidrawDom.querySelector('[aria-label="Redo"]');  // Assuming new redoButton is added to dom by now?
+        redoButton.addEventListener('click', _redoBtnHandler);
+      }
+    }
+
+    const ro = new ResizeObserver(debounce(_resizeListener, 100))
+    ro.observe(excalidrawDom)
+
+    // Call resize on init
+    _resizeListener()
+
+    this.subscriptions.push(() => undoButton?.removeEventListener('click', _undoBtnHandler))
     this.subscriptions.push(() => redoButton?.removeEventListener('click', _redoBtnHandler))
+    this.subscriptions.push(() => ro.disconnect())
   }
 
   destroy() {
