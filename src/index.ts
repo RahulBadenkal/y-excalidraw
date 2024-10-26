@@ -229,13 +229,13 @@ export class ExcalidrawBinding {
     const _resizeListener = () => {
       if (!undoButton || !undoButton.isConnected) {
         undoButton?.removeEventListener('click', _undoBtnHandler)
-        undoButton = excalidrawDom.querySelector('[aria-label="Undo"]');  // Assuming new undoButton is added to dom by now?
+        undoButton = excalidrawDom.querySelector('[aria-label="Undo"]');  // Assuming new undoButton is added to dom by now
         undoButton.addEventListener('click', _undoBtnHandler);
       }
 
       if (!redoButton || !redoButton.isConnected) {
         redoButton?.removeEventListener('click', _undoBtnHandler)
-        redoButton = excalidrawDom.querySelector('[aria-label="Redo"]');  // Assuming new redoButton is added to dom by now?
+        redoButton = excalidrawDom.querySelector('[aria-label="Redo"]');  // Assuming new redoButton is added to dom by now
         redoButton.addEventListener('click', _redoBtnHandler);
       }
     }
