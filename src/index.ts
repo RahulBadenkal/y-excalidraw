@@ -68,8 +68,22 @@ export class ExcalidrawBinding {
         return
       }
 
-      // elements changed outside this component, reflect the change in excalidraw ui
-      const elements = yjsToExcalidraw(this.yElements)
+      // Get changed elements from events
+      const changedElementIds = new Set(event.flatMap(e => {
+        if (e instanceof Y.YMapEvent) {
+         return [e.target.get("el").id as string]
+        }
+        return []
+      }));
+
+      const remoteElements = yjsToExcalidraw(this.yElements);
+      const elements = remoteElements.map(el => {
+        if (changedElementIds.has(el.id)) {
+          return el;
+        }
+        return this.api.getSceneElements().find(existingEl => existingEl.id === el.id) || el;
+      });
+
       this.lastKnownElements = this.yElements.toArray()
         .map((x) => ({ id: x.get("el").id, version: x.get("el").version, pos: x.get("pos") }))
         .sort((a, b) => {
