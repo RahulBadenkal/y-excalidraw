@@ -69,6 +69,7 @@
     "demo:lint": "cd demo && eslint .",
     "demo:preview": "cd demo && vite preview",
     "build": "rm -rf dist && node esbuild.config.mjs && cd src && tsc --emitDeclarationOnly && rm -rf dist/src/tsconfig.tsbuildinfo && mv dist/src ../dist/ && rm -rf dist",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "publish": "npm run prepublish && npm publish"
   }
 }
