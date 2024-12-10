@@ -234,7 +234,7 @@ export class ExcalidrawBinding {
       }
 
       if (!redoButton || !redoButton.isConnected) {
-        redoButton?.removeEventListener('click', _undoBtnHandler)
+        redoButton?.removeEventListener('click', _redoBtnHandler)
         redoButton = excalidrawDom.querySelector('[aria-label="Redo"]');  // Assuming new redoButton is added to dom by now
         redoButton.addEventListener('click', _redoBtnHandler);
       }
